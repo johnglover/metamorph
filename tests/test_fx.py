@@ -35,6 +35,7 @@ class TestTimeScale(object):
         output = ts.process(self.audio)
         assert len(output) == len(self.audio)
 
+    def test_scale_2(self):
         ts2 = metamorph.TimeScale()
         ts2.scale_factor = 2.0
         output2 = ts2.process(self.audio)

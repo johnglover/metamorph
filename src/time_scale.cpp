@@ -31,15 +31,15 @@ void TimeScale::process(long input_size, sample* input,
                         long output_size, sample* output) {
 
     // pass 1: get analysis frames and calculate locations of transient regions
+    reset();
     _transients.clear();
 
     simpl::Frames peaks = _pd->find_peaks(input_size, input);
     simpl::Frames frames = _pt->find_partials(peaks);
 
     long transient_length = 0;
-    int _previous_segment = NONE;
 
-    for(long i = 0; i < output_size - _hop_size; i += _hop_size) {
+    for(long i = 0; i < input_size - _hop_size; i += _hop_size) {
         _previous_segment = _current_segment;
         _current_segment = _ns.segment(_hop_size, &input[i]);
 
