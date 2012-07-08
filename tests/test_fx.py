@@ -18,10 +18,7 @@ class TestFX(object):
     def test_basic(self):
         fx = metamorph.FX()
         output = fx.process(self.audio)
-
         assert len(output) == len(self.audio)
-        for i in range(len(output)):
-            assert_almost_equals(output[i], 0.0, float_precision)
 
 
 class TestTimeScale(object):
