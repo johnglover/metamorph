@@ -16,13 +16,18 @@ except AttributeError:
     numpy_include = numpy.get_numpy_include()
 
 doc_lines = __doc__.split("\n")
-include_dirs = [numpy_include, '/usr/local/include']
+include_dirs = ['/usr/local/include/simpl/',
+                '/usr/local/include',
+                numpy_include]
+libs = ['notesegmentation', 'simpl']
 
 metamorph = Extension(
     "metamorph.fx",
     sources=["metamorph/fx.pyx",
-             "src/fx.cpp"],
+             "src/fx.cpp",
+             "src/time_scale.cpp"],
     include_dirs=["src"] + include_dirs,
+    libraries=libs,
     language="c++"
 )
 

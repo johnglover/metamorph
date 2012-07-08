@@ -5,6 +5,7 @@ import fx
 dtype = np.double
 
 FX = fx.FX
+TimeScale = fx.TimeScale
 
 
 def read_wav(file):
