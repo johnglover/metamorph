@@ -6,7 +6,7 @@ float_precision = 5
 frame_size = 512
 hop_size = 512
 audio_path = os.path.join(
-    os.path.dirname(__file__), 'audio/flute.wav'
+    os.path.dirname(__file__), 'audio/sax.wav'
 )
 
 
