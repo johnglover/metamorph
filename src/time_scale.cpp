@@ -18,6 +18,13 @@ void TimeScale::scale_factor(sample new_scale_factor) {
 }
 
 bool TimeScale::is_transient_region(long sample_number) {
+    for(int i = 0; i < _transients.size(); i++) {
+        if(sample_number >= _transients[i].start &&
+           sample_number <= _transients[i].end) {
+            printf("yup: %ld\n", sample_number);
+            return true;
+        }
+    }
     return false;
 }
 
@@ -88,7 +95,7 @@ void TimeScale::process(long input_size, sample* input,
             output_sample++;
         }
 
-        if(!is_transient_region(n)) {
+        if(!is_transient_region(n * _hop_size)) {
             current_frame += step_size;
         }
         else {
