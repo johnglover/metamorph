@@ -12,19 +12,27 @@ FX::FX() {
     _residual_scale = 1.f;
     _transient_scale = 1.f;
 
-    _harmonic_distortion = false;
+    _harmonic_distortion = -1;
     _fundamental_frequency = 0;
 
     _fade_in = NULL;
     _fade_out = NULL;
 
     _frame = new simpl::Frame(_hop_size, true);
+    _frame->max_partials(_max_partials);
+
     _pd = new simpl::SMSPeakDetection();
     _pd->hop_size(_hop_size);
     ((simpl::SMSPeakDetection*)_pd)->realtime(1);
+
     _pt = new simpl::SMSPartialTracking();
+    _pt->max_partials(_max_partials);
+
     _synth = new simpl::SMSSynthesis();
     _synth->hop_size(_hop_size);
+    _synth->max_partials(_max_partials);
+    ((simpl::SMSSynthesis*)_synth)->det_synthesis_type(0);
+
     _residual = new simpl::SMSResidual();
     _residual->hop_size(_hop_size);
 
@@ -56,6 +64,9 @@ int FX::max_partials() {
 
 void FX::max_partials(int new_max_partials) {
     _max_partials = new_max_partials;
+    _pt->max_partials(_max_partials);
+    _frame->max_partials(_max_partials);
+    _synth->max_partials(_max_partials);
 }
 
 sample FX::harmonic_scale() {
@@ -171,7 +182,7 @@ void FX::process_frame(int input_size, sample* input,
             for(int i = 0; i < _frame->num_partials(); i++) {
                 _frame->partial(i)->frequency =
                     (_harmonic_distortion * _frame->partial(i)->frequency) +
-                    ((1 - _harmonic_distortion) * (f * i));
+                    ((1 - _harmonic_distortion) * (f * (i + 1)));
             }
         }
 
