@@ -20,6 +20,22 @@ cdef class FX:
         def __get__(self): return self.thisptr.hop_size()
         def __set__(self, int n): self.thisptr.hop_size(n)
 
+    property max_partials:
+        def __get__(self): return self.thisptr.max_partials()
+        def __set__(self, int n): self.thisptr.max_partials(n)
+
+    property harmonic_scale:
+        def __get__(self): return self.thisptr.harmonic_scale()
+        def __set__(self, double n): self.thisptr.harmonic_scale(n)
+
+    property residual_scale:
+        def __get__(self): return self.thisptr.residual_scale()
+        def __set__(self, double n): self.thisptr.residual_scale(n)
+
+    property transient_scale:
+        def __get__(self): return self.thisptr.transient_scale()
+        def __set__(self, double n): self.thisptr.transient_scale(n)
+
     def process_frame(self, np.ndarray[dtype_t, ndim=1] audio):
         cdef np.ndarray[dtype_t, ndim=1] output = np.zeros(len(audio))
         self.thisptr.process_frame(len(audio), <double*> audio.data,

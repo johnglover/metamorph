@@ -12,6 +12,14 @@ cdef extern from "../src/fx.h" namespace "metamorph":
         c_FX()
         int hop_size()
         void hop_size(int new_hop_size)
+        int max_partials()
+        void max_partials(int new_max_partials)
+        double harmonic_scale()
+        void harmonic_scale(double new_harmonic_scale)
+        double residual_scale()
+        void residual_scale(double new_residual_scale)
+        double transient_scale()
+        void transient_scale(double new_transient_scale)
         void process_frame(int input_size, double* input,
                            int output_size, double* output)
         void process(long input_size, double* input,

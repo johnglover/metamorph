@@ -4,6 +4,7 @@ using namespace metamorph;
 
 TimeScale::TimeScale() {
     _scale_factor = 1.0;
+    ((simpl::SMSPeakDetection*)_pd)->realtime(0);
 }
 
 TimeScale::~TimeScale() {

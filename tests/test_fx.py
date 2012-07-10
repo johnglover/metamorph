@@ -1,5 +1,6 @@
 import os
 from nose.tools import assert_almost_equals
+import numpy as np
 import metamorph
 
 float_precision = 5
@@ -19,6 +20,25 @@ class TestFX(object):
         fx = metamorph.FX()
         output = fx.process(self.audio)
         assert len(output) == len(self.audio)
+
+    def test_scales_0(self):
+        fx = metamorph.FX()
+        fx.harmonic_scale = 0
+        fx.residual_scale = 0
+        fx.transient_scale = 0
+        output = fx.process(self.audio)
+        assert len(output) == len(self.audio)
+        for i in range(len(output)):
+            assert_almost_equals(output[i], 0.0, float_precision)
+
+    def test_harmonic_non_0(self):
+        fx = metamorph.FX()
+        fx.harmonic_scale = 1
+        fx.residual_scale = 0
+        fx.transient_scale = 0
+        output = fx.process(self.audio)
+        assert len(output) == len(self.audio)
+        assert np.max(output) > 0
 
 
 class TestTimeScale(object):

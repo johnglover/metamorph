@@ -4,19 +4,25 @@ using namespace metamorph;
 
 FX::FX() {
     _hop_size = 512;
+    _max_partials = 100;
     _current_segment = NONE;
     _previous_segment = NONE;
+
+    _harmonic_scale = 1.f;
+    _residual_scale = 1.f;
+    _transient_scale = 1.f;
+
     _fade_in = NULL;
     _fade_out = NULL;
 
     _frame = new simpl::Frame(_hop_size, true);
     _pd = new simpl::SMSPeakDetection();
+    _pd->hop_size(_hop_size);
+    ((simpl::SMSPeakDetection*)_pd)->realtime(1);
     _pt = new simpl::SMSPartialTracking();
     _synth = new simpl::SMSSynthesis();
-    _residual = new simpl::SMSResidual();
-
-    _pd->hop_size(_hop_size);
     _synth->hop_size(_hop_size);
+    _residual = new simpl::SMSResidual();
     _residual->hop_size(_hop_size);
 
     recreate_fade_windows();
@@ -39,6 +45,38 @@ FX::~FX() {
     if(_residual) {
         delete _residual;
     }
+}
+
+int FX::max_partials() {
+    return _max_partials;
+}
+
+void FX::max_partials(int new_max_partials) {
+    _max_partials = new_max_partials;
+}
+
+sample FX::harmonic_scale() {
+    return _harmonic_scale;
+}
+
+void FX::harmonic_scale(sample new_harmonic_scale) {
+    _harmonic_scale = new_harmonic_scale;
+}
+
+sample FX::residual_scale() {
+    return _residual_scale;
+}
+
+void FX::residual_scale(sample new_residual_scale) {
+    _residual_scale = new_residual_scale;
+}
+
+sample FX::transient_scale() {
+    return _transient_scale;
+}
+
+void FX::transient_scale(sample new_transient_scale) {
+    _transient_scale = new_transient_scale;
 }
 
 void FX::recreate_fade_windows() {
@@ -84,6 +122,7 @@ void FX::process_frame(int input_size, sample* input,
                        int output_size, sample* output) {
     _previous_segment = _current_segment;
     _current_segment = _ns.segment(input_size, input);
+    _frame->clear();
     _frame->audio(input);
 
     if(_current_segment == ONSET) {
@@ -92,7 +131,7 @@ void FX::process_frame(int input_size, sample* input,
 
     if(_current_segment == ONSET || _current_segment == ATTACK) {
         for(int i = 0; i < output_size; i++) {
-            output[i] += input[i];
+            output[i] += input[i] * _transient_scale;
         }
     }
     else {
@@ -105,14 +144,15 @@ void FX::process_frame(int input_size, sample* input,
            (_previous_segment == ONSET || _previous_segment == ATTACK)) {
             // end of transient section, crossfade
             for(int i = 0; i < output_size; i++) {
-                output[i] += input[i] * _fade_out[i];
-                output[i] += _frame->synth()[i] * _fade_in[i];
-                output[i] += _frame->synth_residual()[i] * _fade_in[i];
+                output[i] += input[i] * _fade_out[i] * _transient_scale;
+                output[i] += _frame->synth()[i] * _fade_in[i] * _harmonic_scale;
+                output[i] += _frame->synth_residual()[i] * _fade_in[i] * _residual_scale;
             }
         }
         else {
             for(int i = 0; i < output_size; i++) {
-                output[i] += _frame->synth()[i] + _frame->synth_residual()[i];
+                output[i] += _frame->synth()[i] * _harmonic_scale;
+                output[i] += _frame->synth_residual()[i] * _residual_scale;
             }
         }
     }
