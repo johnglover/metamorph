@@ -12,6 +12,9 @@ FX::FX() {
     _residual_scale = 1.f;
     _transient_scale = 1.f;
 
+    _harmonic_distortion = false;
+    _fundamental_frequency = 0;
+
     _fade_in = NULL;
     _fade_out = NULL;
 
@@ -79,6 +82,22 @@ void FX::transient_scale(sample new_transient_scale) {
     _transient_scale = new_transient_scale;
 }
 
+sample FX::harmonic_distortion() {
+    return  _harmonic_distortion;
+}
+
+void FX::harmonic_distortion(sample new_harmonic_distortion) {
+    _harmonic_distortion = new_harmonic_distortion;
+}
+
+sample FX::fundamental_frequency() {
+    return _fundamental_frequency;
+}
+
+void FX::fundamental_frequency(sample new_fundamental_frequency) {
+    _fundamental_frequency = new_fundamental_frequency;
+}
+
 void FX::recreate_fade_windows() {
     if(_fade_in) {
         delete [] _fade_in;
@@ -96,6 +115,15 @@ void FX::recreate_fade_windows() {
         _fade_in[i] = i * step;
         _fade_out[i] = (_hop_size - i) * step;
     }
+}
+
+sample FX::f0() {
+    if(_fundamental_frequency > 0) {
+        return _fundamental_frequency;
+    }
+
+    // TODO: if fundamental frequency not set, estimate it via two-way mismatch
+    return 440.f;
 }
 
 void FX::reset() {
@@ -137,6 +165,16 @@ void FX::process_frame(int input_size, sample* input,
     else {
         _pd->find_peaks_in_frame(_frame);
         _pt->update_partials(_frame);
+
+        if(_harmonic_distortion >= 0) {
+            sample f = f0();
+            for(int i = 0; i < _frame->num_partials(); i++) {
+                _frame->partial(i)->frequency =
+                    (_harmonic_distortion * _frame->partial(i)->frequency) +
+                    ((1 - _harmonic_distortion) * (f * i));
+            }
+        }
+
         _synth->synth_frame(_frame);
         _residual->synth_frame(_frame);
 

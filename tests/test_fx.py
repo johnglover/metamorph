@@ -40,6 +40,14 @@ class TestFX(object):
         assert len(output) == len(self.audio)
         assert np.max(output) > 0
 
+    def test_harmonic_distortion(self):
+        fx = metamorph.FX()
+        fx.fundamental_frequency = 220
+        fx.harmonic_distortion = 0
+        output = fx.process(self.audio)
+        assert len(output) == len(self.audio)
+        assert np.max(output) > 0
+
 
 class TestTimeScale(object):
     @classmethod

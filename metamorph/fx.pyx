@@ -36,6 +36,14 @@ cdef class FX:
         def __get__(self): return self.thisptr.transient_scale()
         def __set__(self, double n): self.thisptr.transient_scale(n)
 
+    property harmonic_distortion:
+        def __get__(self): return self.thisptr.harmonic_distortion()
+        def __set__(self, double n): self.thisptr.harmonic_distortion(n)
+
+    property fundamental_frequency:
+        def __get__(self): return self.thisptr.fundamental_frequency()
+        def __set__(self, double n): self.thisptr.fundamental_frequency(n)
+
     def process_frame(self, np.ndarray[dtype_t, ndim=1] audio):
         cdef np.ndarray[dtype_t, ndim=1] output = np.zeros(len(audio))
         self.thisptr.process_frame(len(audio), <double*> audio.data,
