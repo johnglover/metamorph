@@ -15,6 +15,7 @@ audio, sampling_rate = metamorph.read_wav(input_path)
 print 'Synthesising just the harmonic component (no transient or residual)...'
 
 fx = metamorph.FX()
+fx.harmonic_scale = 1
 fx.residual_scale = 0
 fx.transient_scale = 0
 
