@@ -38,6 +38,13 @@ Additional Python Module Dependencies
 .. _Cython: http://cython.org
 
 
+Additional Csound Opcode Dependencies
+-------------------------------------
+
+* Csound5_
+
+.. _Csound5: http://csounds.com
+
 Installation
 ------------
 
