@@ -15,6 +15,7 @@ class TestFX(object):
     @classmethod
     def setup_class(cls):
         cls.audio = metamorph.read_wav(audio_path)[0]
+        cls.audio = cls.audio[len(cls.audio) / 2:(len(cls.audio) / 2) + 4096]
 
     def test_basic(self):
         fx = metamorph.FX()
@@ -42,8 +43,11 @@ class TestFX(object):
 
     def test_harmonic_distortion(self):
         fx = metamorph.FX()
-        fx.fundamental_frequency = 220
+        fx.fundamental_frequency = 440
         fx.harmonic_distortion = 0
+        fx.max_partials = 1
+        fx.residual_scale = 0
+        fx.transient_scale = 0
         output = fx.process(self.audio)
         assert len(output) == len(self.audio)
         assert np.max(output) > 0

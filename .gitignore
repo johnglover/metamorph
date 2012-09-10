@@ -10,6 +10,7 @@ Thumbs.db
 *.os
 
 build
+build_release
 examples/*.wav
 csound/*.wav
 tests/audio
