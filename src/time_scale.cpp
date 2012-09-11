@@ -4,7 +4,6 @@ using namespace metamorph;
 
 TimeScale::TimeScale() {
     _scale_factor = 1.0;
-    ((simpl::SMSPeakDetection*)_pd)->realtime(0);
 }
 
 TimeScale::~TimeScale() {
@@ -59,19 +58,6 @@ void TimeScale::process(long input_size, sample* input,
         }
     }
 
-    // allocate memory for synthesised harmonic and stochastic components
-    for(int i = 0; i < frames.size(); i++) {
-        sample* synth_audio = new sample[_hop_size];
-        sample* residual = new sample[_hop_size];
-        sample* synth_residual = new sample[_hop_size];
-        memset(synth_audio, 0.0, sizeof(sample) * _hop_size);
-        memset(residual, 0.0, sizeof(sample) * _hop_size);
-        memset(synth_residual, 0.0, sizeof(sample) * _hop_size);
-        frames[i]->synth(synth_audio);
-        frames[i]->residual(residual);
-        frames[i]->synth_residual(synth_residual);
-    }
-
     // pass 2: time scale the signal
     //
     // as no time scaling ocurs during transient regions,
@@ -101,11 +87,5 @@ void TimeScale::process(long input_size, sample* input,
         else {
             current_frame += 1;
         }
-    }
-
-    for(int i = 0; i < frames.size(); i++) {
-        delete [] frames[i]->synth();
-        delete [] frames[i]->residual();
-        delete [] frames[i]->synth_residual();
     }
 }
