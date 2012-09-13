@@ -31,7 +31,8 @@ FX::FX() {
     _pt = new simpl::LorisPartialTracking();
     _pt->max_partials(_max_partials);
 
-    _synth = new simpl::LorisSynthesis();
+    _synth = new simpl::SMSSynthesis();
+    ((simpl::SMSSynthesis*)_synth)->det_synthesis_type(0);
     _synth->hop_size(_hop_size);
     _synth->max_partials(_max_partials);
 
