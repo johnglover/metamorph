@@ -3,8 +3,9 @@
 using namespace metamorph;
 
 FX::FX() {
+    _frame_size = 2048;
     _hop_size = 512;
-    _max_partials = 100;
+    _max_partials = 500;
     _current_segment = NONE;
     _previous_segment = NONE;
 
@@ -18,22 +19,24 @@ FX::FX() {
     _fade_in = NULL;
     _fade_out = NULL;
 
-    _frame = new simpl::Frame(_hop_size, true);
+    _frame = new simpl::Frame(_frame_size, true);
     _frame->max_partials(_max_partials);
+    _residual_frame = new simpl::Frame(_frame_size, true);
+    _prev_frame = new simpl::Frame(_frame_size, true);
 
-    _pd = new simpl::SMSPeakDetection();
+    _pd = new simpl::LorisPeakDetection();
+    _pd->frame_size(_frame_size);
     _pd->hop_size(_hop_size);
-    ((simpl::SMSPeakDetection*)_pd)->realtime(1);
 
-    _pt = new simpl::SMSPartialTracking();
+    _pt = new simpl::LorisPartialTracking();
     _pt->max_partials(_max_partials);
 
-    _synth = new simpl::SMSSynthesis();
+    _synth = new simpl::LorisSynthesis();
     _synth->hop_size(_hop_size);
     _synth->max_partials(_max_partials);
-    ((simpl::SMSSynthesis*)_synth)->det_synthesis_type(0);
 
     _residual = new simpl::SMSResidual();
+    _residual->frame_size(_frame_size);
     _residual->hop_size(_hop_size);
 
     recreate_fade_windows();
@@ -41,21 +44,71 @@ FX::FX() {
 }
 
 FX::~FX() {
-    if(_frame) {
-        delete _frame;
+    if(_frame) delete _frame;
+    if(_residual_frame) delete _residual_frame;
+    if(_prev_frame) delete _prev_frame;
+    if(_pd) delete _pd;
+    if(_pt) delete _pt;
+    if(_synth) delete _synth;
+    if(_residual) delete _residual;
+}
+
+void FX::reset() {
+    _ns.reset();
+}
+
+void FX::recreate_fade_windows() {
+    if(_fade_in) delete [] _fade_in;
+    if(_fade_out) delete [] _fade_out;
+
+    _fade_in = new sample[_hop_size];
+    _fade_out = new sample[_hop_size];
+
+    sample step = 1.f / _hop_size;
+    for(int i = 0; i < _hop_size; i++) {
+        _fade_in[i] = i * step;
+        _fade_out[i] = (_hop_size - i) * step;
     }
-    if(_pd) {
-        delete _pd;
+}
+
+int FX::frame_size() {
+    return _frame_size;
+}
+
+void FX::frame_size(int new_frame_size) {
+    if(new_frame_size < _hop_size) {
+        printf("Error: new frame size was less than current hop size, "
+               "setting frame size to equal current hop size.\n");
+        _frame_size = _hop_size;
     }
-    if(_pt) {
-        delete _pt;
+    else {
+        _frame_size = new_frame_size;
     }
-    if(_synth) {
-        delete _synth;
-    }
-    if(_residual) {
-        delete _residual;
-    }
+
+    if(_frame) delete _frame;
+    _frame = new simpl::Frame(_frame_size, true);
+    _frame->max_partials(_max_partials);
+
+    if(_residual_frame) delete _residual_frame;
+    _residual_frame = new simpl::Frame(_frame_size, true);
+
+    if(_prev_frame) delete _prev_frame;
+    _prev_frame = new simpl::Frame(_frame_size, true);
+
+    _pd->frame_size(_frame_size);
+    _residual->frame_size(_frame_size);
+}
+
+int FX::hop_size() {
+    return _hop_size;
+}
+
+void FX::hop_size(int new_hop_size) {
+    _hop_size = new_hop_size;
+    _pd->hop_size(_hop_size);
+    _synth->hop_size(_hop_size);
+    _residual->hop_size(_hop_size);
+    recreate_fade_windows();
 }
 
 int FX::max_partials() {
@@ -109,52 +162,13 @@ void FX::fundamental_frequency(sample new_fundamental_frequency) {
     _fundamental_frequency = new_fundamental_frequency;
 }
 
-void FX::recreate_fade_windows() {
-    if(_fade_in) {
-        delete [] _fade_in;
-    }
-
-    if(_fade_out) {
-        delete [] _fade_out;
-    }
-
-    _fade_in = new sample[_hop_size];
-    _fade_out = new sample[_hop_size];
-
-    sample step = 1.f / _hop_size;
-    for(int i = 0; i < _hop_size; i++) {
-        _fade_in[i] = i * step;
-        _fade_out[i] = (_hop_size - i) * step;
-    }
-}
-
 sample FX::f0() {
     if(_fundamental_frequency > 0) {
         return _fundamental_frequency;
     }
 
-    // TODO: if fundamental frequency not set, estimate it via two-way mismatch
+    // TODO: estimate fundamental frequency if not set
     return 440.f;
-}
-
-void FX::reset() {
-    _ns.reset();
-}
-
-int FX::hop_size() {
-    return _hop_size;
-}
-
-void FX::hop_size(int new_hop_size) {
-    _hop_size = new_hop_size;
-    if(_frame) {
-        delete _frame;
-    }
-    _frame = new simpl::Frame(_hop_size, true);
-    _pd->hop_size(_hop_size);
-    _synth->hop_size(_hop_size);
-    _residual->hop_size(_hop_size);
-    recreate_fade_windows();
 }
 
 void FX::process_frame(int input_size, sample* input,
@@ -162,8 +176,26 @@ void FX::process_frame(int input_size, sample* input,
     _previous_segment = _current_segment;
     _current_segment = _ns.segment(input_size, input);
     _frame->clear();
-    _frame->audio(input);
+    _residual_frame->clear();
 
+    // get audio input, appending to previous samples if necessary
+    if(_hop_size == _frame_size) {
+        _frame->audio(input);
+        _residual_frame->audio(input);
+    }
+    else {
+        memcpy(_frame->audio(), _prev_frame->audio() + _hop_size,
+               sizeof(sample) * (_frame_size - _hop_size));
+        memcpy(_frame->audio() + (_frame_size - _hop_size), input,
+               sizeof(sample) * _hop_size);
+
+        memcpy(_residual_frame->audio(), _prev_frame->audio() + _hop_size,
+               sizeof(sample) * (_frame_size - _hop_size));
+        memcpy(_residual_frame->audio() + (_frame_size - _hop_size), input,
+               sizeof(sample) * _hop_size);
+    }
+
+    // reset any processes that rely on the current note segment
     if(_current_segment == ONSET) {
         reset();
     }
@@ -177,6 +209,7 @@ void FX::process_frame(int input_size, sample* input,
         _pd->find_peaks_in_frame(_frame);
         _pt->update_partials(_frame);
 
+        // harmonic distortion
         if(_harmonic_distortion >= 0) {
             sample f = f0();
             for(int i = 0; i < _frame->num_partials(); i++) {
@@ -187,7 +220,10 @@ void FX::process_frame(int input_size, sample* input,
         }
 
         _synth->synth_frame(_frame);
-        _residual->synth_frame(_frame);
+
+        if(_residual_scale > 0) {
+            _residual->synth_frame(_residual_frame);
+        }
 
         if(_current_segment == SUSTAIN &&
            (_previous_segment == ONSET || _previous_segment == ATTACK)) {
@@ -195,15 +231,23 @@ void FX::process_frame(int input_size, sample* input,
             for(int i = 0; i < output_size; i++) {
                 output[i] += input[i] * _fade_out[i] * _transient_scale;
                 output[i] += _frame->synth()[i] * _fade_in[i] * _harmonic_scale;
-                output[i] += _frame->synth_residual()[i] * _fade_in[i] * _residual_scale;
+                output[i] += _residual_frame->synth_residual()[i] *
+                             _fade_in[i] * _residual_scale;
             }
         }
         else {
             for(int i = 0; i < output_size; i++) {
                 output[i] += _frame->synth()[i] * _harmonic_scale;
-                output[i] += _frame->synth_residual()[i] * _residual_scale;
+                output[i] += _residual_frame->synth_residual()[i] *
+                             _residual_scale;
             }
         }
+    }
+
+    // save samples if frames are larger than hops
+    if(_frame_size > _hop_size) {
+        memcpy(_prev_frame->audio(), _frame->audio(),
+               sizeof(sample) * _frame_size);
     }
 }
 

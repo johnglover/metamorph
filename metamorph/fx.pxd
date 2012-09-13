@@ -10,6 +10,8 @@ ctypedef np.double_t dtype_t
 cdef extern from "../src/fx.h" namespace "metamorph":
     cdef cppclass c_FX "metamorph::FX":
         c_FX()
+        int frame_size()
+        void frame_size(int new_frame_size)
         int hop_size()
         void hop_size(int new_hop_size)
         int max_partials()

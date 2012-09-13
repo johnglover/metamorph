@@ -16,6 +16,10 @@ cdef class FX:
         if self.thisptr:
             del self.thisptr
 
+    property frame_size:
+        def __get__(self): return self.thisptr.frame_size()
+        def __set__(self, int n): self.thisptr.frame_size(n)
+
     property hop_size:
         def __get__(self): return self.thisptr.hop_size()
         def __set__(self, int n): self.thisptr.hop_size(n)

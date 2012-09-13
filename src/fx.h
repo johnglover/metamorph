@@ -14,6 +14,7 @@ typedef double sample;
 
 class FX {
     protected:
+        int _frame_size;
         int _hop_size;
         int _max_partials;
         int _current_segment;
@@ -32,6 +33,8 @@ class FX {
         GLT _ns;
 
         simpl::Frame* _frame;
+        simpl::Frame* _residual_frame;
+        simpl::Frame* _prev_frame;
         simpl::PeakDetection* _pd;
         simpl::PartialTracking* _pt;
         simpl::Synthesis* _synth;
@@ -46,6 +49,8 @@ class FX {
 
         void reset();
 
+        int frame_size();
+        virtual void frame_size(int new_frame_size);
         int hop_size();
         virtual void hop_size(int new_hop_size);
         int max_partials();
