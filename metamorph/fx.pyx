@@ -81,3 +81,24 @@ cdef class TimeScale(FX):
         self.thisptr.process(len(audio), <double*> audio.data,
                              len(output), <double*> output.data)
         return output
+
+
+cdef class SpectralEnvelope:
+    cdef c_SpectralEnvelope* thisptr
+
+    def __cinit__(self, int order, int env_size):
+        if self.thisptr:
+            del self.thisptr
+        self.thisptr = new c_SpectralEnvelope(order, env_size)
+    def __dealloc__(self):
+        if self.thisptr:
+            del self.thisptr
+            self.thisptr = <c_SpectralEnvelope*>0
+
+    def env(self, np.ndarray[dtype_t, ndim=1] freqs,
+                  np.ndarray[dtype_t, ndim=1] mags):
+        cdef np.ndarray[dtype_t, ndim=1] env = \
+            np.zeros(self.thisptr.env_size())
+        self.thisptr.env(len(freqs), <double*> freqs.data, <double*> mags.data,
+                         len(env), <double*> env.data)
+        return env

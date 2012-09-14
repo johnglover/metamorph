@@ -37,3 +37,12 @@ cdef extern from "../src/time_scale.h" namespace "metamorph":
         c_TimeScale()
         double scale_factor()
         void scale_factor(double new_scale_factor)
+
+
+cdef extern from "../src/spec_env.h" namespace "metamorph":
+    cdef cppclass c_SpectralEnvelope "metamorph::SpectralEnvelope":
+        c_SpectralEnvelope(int order, int env_size)
+        int env_size()
+        void env_size(int new_env_size)
+        void env(int num_peaks, double* freqs, double* mags,
+                 int env_size, double* e)

@@ -1,11 +1,9 @@
 cmake_minimum_required(VERSION 2.6)
 project(metamorph)
 
-set(source_files src/fx.cpp src/time_scale.cpp)
-set(include_files src/metamorph.h
-                  src/fx.h
-                  src/time_scale.h)
-set(libs m simpl modal notesegmentation)
+set(source_files src/fx.cpp src/time_scale.cpp src/spec_env.cpp)
+set(include_files src/metamorph.h src/fx.h src/time_scale.h src/spec_env.h)
+set(libs m gsl fftw3 simpl modal notesegmentation)
 
 include_directories(src)
 add_library(metamorph SHARED ${source_files})
