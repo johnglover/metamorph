@@ -165,6 +165,10 @@ void SpectralEnvelope::discrete_cepstrum_envelope(
 
 void SpectralEnvelope::env(int num_peaks, sample* freqs, sample* mags,
                            int env_size, sample* e){
+    if(num_peaks <= 0) {
+        return;
+    }
+
     discrete_cepstrum(num_peaks, freqs, mags, _d.num_coeffs, _d.cepstrum);
     discrete_cepstrum_envelope(_d.num_coeffs, _d.cepstrum, env_size, e);
 }

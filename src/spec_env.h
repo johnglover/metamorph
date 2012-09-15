@@ -16,7 +16,6 @@
 #include <gsl/gsl_blas.h>
 #include <fftw3.h>
 
-#include "fx.h"
 #include "simpl/simpl.h"
 
 
@@ -29,6 +28,8 @@ namespace metamorph
 #define PI_2 1.57079632679489661923
 #define SINE_TABLE_SIZE 4096
 #define COEF (8 * powf(PI, 2))
+
+typedef double sample;
 
 typedef struct
 {

@@ -5,7 +5,7 @@ using namespace metamorph;
 FX::FX() {
     _frame_size = 2048;
     _hop_size = 512;
-    _max_partials = 500;
+    _max_partials = 128;
     _current_segment = NONE;
     _previous_segment = NONE;
 
@@ -13,13 +13,15 @@ FX::FX() {
     _residual_scale = 1.f;
     _transient_scale = 1.f;
 
-    _harmonic_distortion = -1;
-    _fundamental_frequency = 0;
+    _harmonic_distortion = -1.f;
+    _fundamental_frequency = 0.f;
+    _transposition = 1.f;
 
     _fade_in = NULL;
     _fade_out = NULL;
 
     _frame = new simpl::Frame(_frame_size, true);
+    _frame->max_peaks(_max_partials);
     _frame->max_partials(_max_partials);
     _residual_frame = new simpl::Frame(_frame_size, true);
     _prev_frame = new simpl::Frame(_frame_size, true);
@@ -27,6 +29,7 @@ FX::FX() {
     _pd = new simpl::LorisPeakDetection();
     _pd->frame_size(_frame_size);
     _pd->hop_size(_hop_size);
+    _pd->max_peaks(_max_partials);
 
     _pt = new simpl::LorisPartialTracking();
     _pt->max_partials(_max_partials);
@@ -40,6 +43,21 @@ FX::FX() {
     _residual->frame_size(_frame_size);
     _residual->hop_size(_hop_size);
 
+    _create_env = false;
+    _apply_env = false;
+    _env_interp = 0.f;
+    _env_size = _max_partials;
+    _bin_size = 22050.0 / _env_size;
+    _env = new sample[_env_size];
+    _new_env = new sample[_env_size];
+    _env_freqs = new sample[_env_size];
+    _env_mags = new sample[_env_size];
+    memset(_env, 0, sizeof(sample) * _env_size);
+    memset(_new_env, 0, sizeof(sample) * _env_size);
+    memset(_env_freqs, 0, sizeof(sample) * _env_size);
+    memset(_env_mags, 0, sizeof(sample) * _env_size);
+    _spec_env = new SpectralEnvelope(25, _env_size);
+
     recreate_fade_windows();
     reset();
 }
@@ -52,6 +70,11 @@ FX::~FX() {
     if(_pt) delete _pt;
     if(_synth) delete _synth;
     if(_residual) delete _residual;
+    if(_env) delete _env;
+    if(_new_env) delete _new_env;
+    if(_env_freqs) delete _env_freqs;
+    if(_env_mags) delete _env_mags;
+    delete _spec_env;
 }
 
 void FX::reset() {
@@ -147,14 +170,6 @@ void FX::transient_scale(sample new_transient_scale) {
     _transient_scale = new_transient_scale;
 }
 
-sample FX::harmonic_distortion() {
-    return  _harmonic_distortion;
-}
-
-void FX::harmonic_distortion(sample new_harmonic_distortion) {
-    _harmonic_distortion = new_harmonic_distortion;
-}
-
 sample FX::fundamental_frequency() {
     return _fundamental_frequency;
 }
@@ -172,6 +187,105 @@ sample FX::f0() {
     return 440.f;
 }
 
+// ---------------------------------------------------------------------------
+// Transposition
+// ---------------------------------------------------------------------------
+void FX::transposition(simpl::Frame* frame) {
+}
+
+// ---------------------------------------------------------------------------
+// Spectral Envelope
+// ---------------------------------------------------------------------------
+sample FX::env_interp() {
+    return _env_interp;
+}
+
+void FX::env_interp(sample new_env_interp) {
+    _env_interp = new_env_interp;
+}
+
+void FX::create_envelope(simpl::Frame* frame) {
+    if(_create_env) {
+    }
+}
+
+void FX::apply_envelope(simpl::Frame* frame) {
+    if(!_apply_env) {
+        return;
+    }
+
+    if(_env_interp > 0) {
+        sample amp1, amp2;
+        for(int i = 0; i < _env_size; i++) {
+            amp1 = _env[i];
+            amp2 = _new_env[i];
+            if(amp1 <= 0) amp1 = amp2;
+            if(amp2 <= 0) amp2 = amp1;
+            _env[i] = amp1 + (_env_interp * (amp2 - amp1));
+        }
+    }
+
+    int bin;
+    sample bin_frac;
+
+    for(int i = 0; i < frame->num_partials(); i++) {
+        bin = (int)(frame->partial(i)->frequency / _bin_size);
+        bin_frac = (frame->partial(i)->frequency / (sample)_bin_size) - (sample)bin;
+
+        if(bin < _env_size - 1) {
+            frame->partial(i)->amplitude =
+                ((1.0 - bin_frac) * _new_env[bin]) + (bin_frac * _new_env[bin + 1]);
+        }
+        else {
+            frame->partial(i)->amplitude = _new_env[bin];
+        }
+    }
+}
+
+void FX::apply_envelope(int env_size, sample* env) {
+    if(env_size != _env_size) {
+        printf("Error: could not apply envelope as the new envelope "
+               "size (%d) does not match the current envelope "
+               "size (%d).\n", env_size, _env_size);
+        return;
+    }
+
+    _apply_env = true;
+    memcpy(_new_env, env, sizeof(sample) * env_size);
+}
+
+void FX::clear_envelope() {
+    _apply_env = false;
+    memset(_new_env, 0, sizeof(sample) * _max_partials);
+}
+
+// ---------------------------------------------------------------------------
+// Harmonic Distortion
+// ---------------------------------------------------------------------------
+sample FX::harmonic_distortion() {
+    return  _harmonic_distortion;
+}
+
+void FX::harmonic_distortion(sample new_harmonic_distortion) {
+    _harmonic_distortion = new_harmonic_distortion;
+}
+
+void FX::harmonic_distortion(simpl::Frame* frame) {
+    if(_harmonic_distortion < 0) {
+        return;
+    }
+
+    sample f = f0();
+    for(int i = 0; i < frame->num_partials(); i++) {
+        frame->partial(i)->frequency =
+            (_harmonic_distortion * frame->partial(i)->frequency) +
+            ((1 - _harmonic_distortion) * (f * (i + 1)));
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Process Frame
+// ---------------------------------------------------------------------------
 void FX::process_frame(int input_size, sample* input,
                        int output_size, sample* output) {
     _previous_segment = _current_segment;
@@ -210,15 +324,10 @@ void FX::process_frame(int input_size, sample* input,
         _pd->find_peaks_in_frame(_frame);
         _pt->update_partials(_frame);
 
-        // harmonic distortion
-        if(_harmonic_distortion >= 0) {
-            sample f = f0();
-            for(int i = 0; i < _frame->num_partials(); i++) {
-                _frame->partial(i)->frequency =
-                    (_harmonic_distortion * _frame->partial(i)->frequency) +
-                    ((1 - _harmonic_distortion) * (f * (i + 1)));
-            }
-        }
+        create_envelope(_frame);
+        transposition(_frame);
+        harmonic_distortion(_frame);
+        apply_envelope(_frame);
 
         _synth->synth_frame(_frame);
 
@@ -252,6 +361,9 @@ void FX::process_frame(int input_size, sample* input,
     }
 }
 
+// ---------------------------------------------------------------------------
+// Process
+// ---------------------------------------------------------------------------
 void FX::process(long input_size, sample* input,
                  long output_size, sample* output) {
     for(long i = 0; i < output_size - _hop_size; i += _hop_size) {

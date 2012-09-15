@@ -26,6 +26,10 @@ cdef extern from "../src/fx.h" namespace "metamorph":
         void harmonic_distortion(double new_harmonic_distortion)
         double fundamental_frequency()
         void fundamental_frequency(double new_fundamental_frequency)
+        double env_interp()
+        void env_interp(double new_env_interp)
+        void apply_envelope(int env_size, double* env)
+        void clear_envelope()
         void process_frame(int input_size, double* input,
                            int output_size, double* output)
         void process(long input_size, double* input,

@@ -3,6 +3,7 @@
 
 #include "notesegmentation/segmentation.h"
 #include "simpl/simpl.h"
+#include "spec_env.h"
 
 using namespace std;
 
@@ -26,6 +27,7 @@ class FX {
 
         sample _harmonic_distortion;
         sample _fundamental_frequency;
+        sample _transposition;
 
         sample* _fade_in;
         sample* _fade_out;
@@ -40,8 +42,24 @@ class FX {
         simpl::Synthesis* _synth;
         simpl::Residual* _residual;
 
+        bool _create_env;
+        bool _apply_env;
+        sample _env_interp;
+        int _env_size;
+        sample* _env;
+        sample* _new_env;
+        sample* _env_freqs;
+        sample* _env_mags;
+        sample _bin_size;
+        SpectralEnvelope* _spec_env;
+
         void recreate_fade_windows();
         virtual sample f0();
+
+        void create_envelope(simpl::Frame* frame);
+        void apply_envelope(simpl::Frame* frame);
+        void transposition(simpl::Frame* frame);
+        void harmonic_distortion(simpl::Frame* frame);
 
     public:
         FX();
@@ -65,8 +83,14 @@ class FX {
 
         sample harmonic_distortion();
         void harmonic_distortion(sample new_harmonic_distortion);
+
         sample fundamental_frequency();
         virtual void fundamental_frequency(sample new_fundamental_frequency);
+
+        sample env_interp();
+        void env_interp(sample new_env_interp);
+        void apply_envelope(int env_size, sample* env);
+        void clear_envelope();
 
         virtual void process_frame(int input_size, sample* input,
                                    int output_size, sample* output);

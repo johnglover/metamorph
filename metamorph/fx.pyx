@@ -48,6 +48,16 @@ cdef class FX:
         def __get__(self): return self.thisptr.fundamental_frequency()
         def __set__(self, double n): self.thisptr.fundamental_frequency(n)
 
+    property env_interp:
+        def __get__(self): return self.thisptr.env_interp()
+        def __set__(self, double n): self.thisptr.env_interp(n)
+
+    def apply_envelope(self, np.ndarray[dtype_t, ndim=1] env):
+        self.thisptr.apply_envelope(len(env), <double*> env.data)
+
+    def clear_envelope(self):
+        self.thisptr.clear_envelope()
+
     def process_frame(self, np.ndarray[dtype_t, ndim=1] audio):
         cdef np.ndarray[dtype_t, ndim=1] output = np.zeros(len(audio))
         self.thisptr.process_frame(len(audio), <double*> audio.data,

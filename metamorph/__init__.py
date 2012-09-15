@@ -6,6 +6,7 @@ dtype = np.double
 
 FX = fx.FX
 TimeScale = fx.TimeScale
+SpectralEnvelope = fx.SpectralEnvelope
 
 
 def read_wav(file):
