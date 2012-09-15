@@ -40,6 +40,10 @@ cdef class FX:
         def __get__(self): return self.thisptr.transient_scale()
         def __set__(self, double n): self.thisptr.transient_scale(n)
 
+    property transposition:
+        def __get__(self): return self.thisptr.transposition()
+        def __set__(self, double n): self.thisptr.transposition(n)
+
     property harmonic_distortion:
         def __get__(self): return self.thisptr.harmonic_distortion()
         def __set__(self, double n): self.thisptr.harmonic_distortion(n)

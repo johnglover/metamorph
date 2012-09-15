@@ -58,6 +58,7 @@ class FX {
 
         void create_envelope(simpl::Frame* frame);
         void apply_envelope(simpl::Frame* frame);
+        sample semitones_to_freq(sample semitones);
         void transposition(simpl::Frame* frame);
         void harmonic_distortion(simpl::Frame* frame);
 
@@ -80,6 +81,9 @@ class FX {
         virtual void residual_scale(sample new_residual_scale);
         sample transient_scale();
         virtual void transient_scale(sample new_transient_scale);
+
+        sample transposition();
+        void transposition(sample new_transposition);
 
         sample harmonic_distortion();
         void harmonic_distortion(sample new_harmonic_distortion);

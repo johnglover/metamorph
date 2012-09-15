@@ -15,7 +15,7 @@ FX::FX() {
 
     _harmonic_distortion = -1.f;
     _fundamental_frequency = 0.f;
-    _transposition = 1.f;
+    _transposition = 0.f;
 
     _fade_in = NULL;
     _fade_out = NULL;
@@ -190,7 +190,24 @@ sample FX::f0() {
 // ---------------------------------------------------------------------------
 // Transposition
 // ---------------------------------------------------------------------------
+sample FX::transposition() {
+    return _transposition;
+}
+
+void FX::transposition(sample new_transposition) {
+    _transposition = new_transposition;
+}
+
+sample FX::semitones_to_freq(sample semitones) {
+    return powf(1.0594630943592953, semitones);
+}
+
 void FX::transposition(simpl::Frame* frame) {
+    if(_transposition != 0) {
+        for(int i = 0; i < frame->num_partials(); i++) {
+            frame->partial(i)->frequency *= semitones_to_freq(_transposition);
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------

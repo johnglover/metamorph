@@ -22,6 +22,8 @@ cdef extern from "../src/fx.h" namespace "metamorph":
         void residual_scale(double new_residual_scale)
         double transient_scale()
         void transient_scale(double new_transient_scale)
+        double transposition()
+        void transposition(double new_transposition)
         double harmonic_distortion()
         void harmonic_distortion(double new_harmonic_distortion)
         double fundamental_frequency()
