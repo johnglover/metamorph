@@ -2,6 +2,7 @@ import numpy as np
 cimport numpy as np
 np.import_array()
 from libcpp.vector cimport vector
+from libcpp cimport bool
 
 cimport fx
 
@@ -51,6 +52,10 @@ cdef class FX:
     property fundamental_frequency:
         def __get__(self): return self.thisptr.fundamental_frequency()
         def __set__(self, double n): self.thisptr.fundamental_frequency(n)
+
+    property preserve_envelope:
+        def __get__(self): return self.thisptr.preserve_envelope()
+        def __set__(self, bool b): self.thisptr.preserve_envelope(b)
 
     property env_interp:
         def __get__(self): return self.thisptr.env_interp()

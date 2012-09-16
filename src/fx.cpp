@@ -5,7 +5,7 @@ using namespace metamorph;
 FX::FX() {
     _frame_size = 2048;
     _hop_size = 512;
-    _max_partials = 128;
+    _max_partials = 256;
     _current_segment = NONE;
     _previous_segment = NONE;
 
@@ -31,7 +31,7 @@ FX::FX() {
     _pd->hop_size(_hop_size);
     _pd->max_peaks(_max_partials);
 
-    _pt = new simpl::LorisPartialTracking();
+    _pt = new simpl::SMSPartialTracking();
     _pt->max_partials(_max_partials);
 
     _synth = new simpl::SMSSynthesis();
@@ -46,17 +46,18 @@ FX::FX() {
     _create_env = false;
     _apply_env = false;
     _env_interp = 0.f;
-    _env_size = _max_partials;
+    _env_size = _max_partials / 2;
+    _env_order = _max_partials / 2;
     _bin_size = 22050.0 / _env_size;
     _env = new sample[_env_size];
     _new_env = new sample[_env_size];
-    _env_freqs = new sample[_env_size];
-    _env_mags = new sample[_env_size];
+    _env_freqs = new sample[_max_partials];
+    _env_mags = new sample[_max_partials];
     memset(_env, 0, sizeof(sample) * _env_size);
     memset(_new_env, 0, sizeof(sample) * _env_size);
-    memset(_env_freqs, 0, sizeof(sample) * _env_size);
-    memset(_env_mags, 0, sizeof(sample) * _env_size);
-    _spec_env = new SpectralEnvelope(25, _env_size);
+    memset(_env_freqs, 0, sizeof(sample) * _max_partials);
+    memset(_env_mags, 0, sizeof(sample) * _max_partials);
+    _spec_env = new SpectralEnvelope(_env_order, _env_size);
 
     recreate_fade_windows();
     reset();
@@ -70,10 +71,10 @@ FX::~FX() {
     if(_pt) delete _pt;
     if(_synth) delete _synth;
     if(_residual) delete _residual;
-    if(_env) delete _env;
-    if(_new_env) delete _new_env;
-    if(_env_freqs) delete _env_freqs;
-    if(_env_mags) delete _env_mags;
+    if(_env) delete [] _env;
+    if(_new_env) delete [] _new_env;
+    if(_env_freqs) delete [] _env_freqs;
+    if(_env_mags) delete [] _env_mags;
     delete _spec_env;
 }
 
@@ -199,7 +200,7 @@ void FX::transposition(sample new_transposition) {
 }
 
 sample FX::semitones_to_freq(sample semitones) {
-    return powf(1.0594630943592953, semitones);
+    return powf(TWELFTH_ROOT_2, semitones);
 }
 
 void FX::transposition(simpl::Frame* frame) {
@@ -213,6 +214,18 @@ void FX::transposition(simpl::Frame* frame) {
 // ---------------------------------------------------------------------------
 // Spectral Envelope
 // ---------------------------------------------------------------------------
+bool FX::preserve_envelope() {
+    return _create_env && _apply_env;
+}
+
+void FX::preserve_envelope(bool preserve) {
+    _create_env = preserve;
+
+    if(_env_interp == 0) {
+        _apply_env = preserve;
+    }
+}
+
 sample FX::env_interp() {
     return _env_interp;
 }
@@ -222,8 +235,24 @@ void FX::env_interp(sample new_env_interp) {
 }
 
 void FX::create_envelope(simpl::Frame* frame) {
-    if(_create_env) {
+    if(!_create_env) {
+        return;
     }
+
+    int Np = 0;
+    int partial_step = _max_partials / _env_size;
+    int i = 0;
+
+    while(i < frame->num_partials()) {
+        if(frame->partial(i)->amplitude > 0.f) {
+            _env_freqs[Np] = frame->partial(i)->frequency;
+            _env_mags[Np] = frame->partial(i)->amplitude;
+            Np++;
+        }
+        i += partial_step;
+    }
+
+    _spec_env->env(Np, _env_freqs, _env_mags, _env_size, _env);
 }
 
 void FX::apply_envelope(simpl::Frame* frame) {
@@ -246,15 +275,19 @@ void FX::apply_envelope(simpl::Frame* frame) {
     sample bin_frac;
 
     for(int i = 0; i < frame->num_partials(); i++) {
+        if(frame->partial(i)->amplitude <= 0) {
+            continue;
+        }
+
         bin = (int)(frame->partial(i)->frequency / _bin_size);
         bin_frac = (frame->partial(i)->frequency / (sample)_bin_size) - (sample)bin;
 
         if(bin < _env_size - 1) {
             frame->partial(i)->amplitude =
-                ((1.0 - bin_frac) * _new_env[bin]) + (bin_frac * _new_env[bin + 1]);
+                ((1.0 - bin_frac) * _env[bin]) + (bin_frac * _env[bin + 1]);
         }
         else {
-            frame->partial(i)->amplitude = _new_env[bin];
+            frame->partial(i)->amplitude = _env[bin];
         }
     }
 }

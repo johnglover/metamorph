@@ -2,6 +2,7 @@ import numpy as np
 cimport numpy as np
 np.import_array()
 from libcpp.vector cimport vector
+from libcpp cimport bool
 
 dtype = np.float64
 ctypedef np.double_t dtype_t
@@ -28,6 +29,8 @@ cdef extern from "../src/fx.h" namespace "metamorph":
         void harmonic_distortion(double new_harmonic_distortion)
         double fundamental_frequency()
         void fundamental_frequency(double new_fundamental_frequency)
+        bool preserve_envelope()
+        void preserve_envelope(bool preserve)
         double env_interp()
         void env_interp(double new_env_interp)
         void apply_envelope(int env_size, double* env)

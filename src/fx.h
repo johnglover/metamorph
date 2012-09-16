@@ -5,6 +5,8 @@
 #include "simpl/simpl.h"
 #include "spec_env.h"
 
+#define TWELFTH_ROOT_2 1.0594630943592953
+
 using namespace std;
 
 
@@ -46,6 +48,7 @@ class FX {
         bool _apply_env;
         sample _env_interp;
         int _env_size;
+        int _env_order;
         sample* _env;
         sample* _new_env;
         sample* _env_freqs;
@@ -91,6 +94,8 @@ class FX {
         sample fundamental_frequency();
         virtual void fundamental_frequency(sample new_fundamental_frequency);
 
+        bool preserve_envelope();
+        void preserve_envelope(bool preserve);
         sample env_interp();
         void env_interp(sample new_env_interp);
         void apply_envelope(int env_size, sample* env);
