@@ -26,50 +26,47 @@ namespace metamorph
 #define TWO_PI 6.28318530717958647692
 #define INV_TWO_PI (1 / TWO_PI)
 #define PI_2 1.57079632679489661923
+#define E 2.7182818284590451
 #define SINE_TABLE_SIZE 4096
 #define COEF (8 * powf(PI, 2))
 
 typedef double sample;
 
-typedef struct
-{
-    int num_points;
-    int num_coeffs;
-    sample* cepstrum;
-
-    gsl_matrix* M;
-    gsl_matrix* Mt;
-    gsl_matrix* R;
-    gsl_matrix* MtMR;
-    gsl_vector* Xk;
-    gsl_vector* MtXk;
-    gsl_vector* C;
-    gsl_permutation* Perm;
-
-    sample sine_scale;
-    sample sine_incr;
-    sample* sine_table;
-
-    int fft_size;
-    sample* fft_in;
-    fftw_complex* fft_out;
-    fftw_plan fft_plan;
-} CepstrumData;
-
 sample sine(sample theta, sample sine_incr, sample* sine_table);
+
 
 class SpectralEnvelope {
     private:
-        int _order;
-        int _num_coeffs;
         sample _lambda;
         sample _max_freq;
-        CepstrumData _d;
+        int _cepstrum_size;
+        int _num_peaks;
+        int _env_size;
+        sample* _cepstrum;
 
-        void discrete_cepstrum(int freqs_size, sample* freqs, sample* mags,
-                               int cepstrum_size, sample* cepstrum);
-        void discrete_cepstrum_envelope(int cepstrum_size, sample* cepstrum,
-                                        int env_size, sample* env);
+        gsl_matrix* _M;
+        gsl_matrix* _Mt;
+        gsl_matrix* _R;
+        gsl_matrix* _MtMR;
+        gsl_vector* _Xk;
+        gsl_vector* _MtXk;
+        gsl_vector* _C;
+        gsl_permutation* _Perm;
+
+        sample _sine_scale;
+        sample _sine_incr;
+        sample* _sine_table;
+
+        int _fft_size;
+        sample* _fft_in;
+        fftw_complex* _fft_out;
+        fftw_plan _fft_plan;
+
+        void create_cepstrum_data();
+        void destroy_cepstrum_data();
+        void reset();
+        void discrete_cepstrum(int freqs_size, sample* freqs, sample* mags);
+        void discrete_cepstrum_envelope(int env_size, sample* env);
 
     public:
         SpectralEnvelope(int order, int env_size);
