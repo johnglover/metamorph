@@ -41,6 +41,14 @@ cdef class FX:
         def __get__(self): return self.thisptr.transient_scale()
         def __set__(self, double n): self.thisptr.transient_scale(n)
 
+    property preserve_transients:
+        def __get__(self): return self.thisptr.preserve_transients()
+        def __set__(self, bool b): self.thisptr.preserve_transients(b)
+
+    property transient_substitution:
+        def __get__(self): return self.thisptr.transient_substitution()
+        def __set__(self, bool b): self.thisptr.transient_substitution(b)
+
     property transposition:
         def __get__(self): return self.thisptr.transposition()
         def __set__(self, double n): self.thisptr.transposition(n)
@@ -60,6 +68,12 @@ cdef class FX:
     property env_interp:
         def __get__(self): return self.thisptr.env_interp()
         def __set__(self, double n): self.thisptr.env_interp(n)
+
+    def new_transient(self, np.ndarray[dtype_t, ndim=1] transient):
+        self.thisptr.new_transient(len(transient), <double*> transient.data)
+
+    def clear_new_transient(self):
+        self.thisptr.clear_new_transient()
 
     def apply_envelope(self, np.ndarray[dtype_t, ndim=1] env):
         self.thisptr.apply_envelope(len(env), <double*> env.data)

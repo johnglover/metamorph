@@ -13,6 +13,8 @@ FX::FX() {
     _residual_scale = 1.f;
     _transient_scale = 1.f;
 
+    _preserve_transients = true;
+
     _harmonic_distortion = -1.f;
     _fundamental_frequency = 0.f;
     _transposition = 0.f;
@@ -48,22 +50,24 @@ FX::FX() {
     _env_interp = 0.f;
     _env_size = _max_partials / 2;
     _env_order = _max_partials / 2;
-    _bin_size = 22050.0 / _env_size;
-    _env = new sample[_env_size];
-    _new_env = new sample[_env_size];
-    _env_freqs = new sample[_max_partials];
-    _env_mags = new sample[_max_partials];
-    memset(_env, 0, sizeof(sample) * _env_size);
-    memset(_new_env, 0, sizeof(sample) * _env_size);
-    memset(_env_freqs, 0, sizeof(sample) * _max_partials);
-    memset(_env_mags, 0, sizeof(sample) * _max_partials);
-    _spec_env = new SpectralEnvelope(_env_order, _env_size);
+    _env = NULL;
+    _new_env = NULL;
+    _env_freqs = NULL;
+    _env_mags = NULL;
+    _spec_env = NULL;
+    reset_envelope_data();
 
-    recreate_fade_windows();
+    _transient_substitution = false;
+    _new_transient_size = 0;
+    _new_transient = NULL;
+
+    reset_fade_windows();
     reset();
 }
 
 FX::~FX() {
+    if(_fade_in) delete [] _fade_in;
+    if(_fade_out) delete [] _fade_out;
     if(_frame) delete _frame;
     if(_residual_frame) delete _residual_frame;
     if(_prev_frame) delete _prev_frame;
@@ -71,18 +75,19 @@ FX::~FX() {
     if(_pt) delete _pt;
     if(_synth) delete _synth;
     if(_residual) delete _residual;
+    if(_new_transient) delete [] _new_transient;
     if(_env) delete [] _env;
     if(_new_env) delete [] _new_env;
     if(_env_freqs) delete [] _env_freqs;
     if(_env_mags) delete [] _env_mags;
-    delete _spec_env;
+    if(_spec_env) delete _spec_env;
 }
 
 void FX::reset() {
     _ns.reset();
 }
 
-void FX::recreate_fade_windows() {
+void FX::reset_fade_windows() {
     if(_fade_in) delete [] _fade_in;
     if(_fade_out) delete [] _fade_out;
 
@@ -94,6 +99,25 @@ void FX::recreate_fade_windows() {
         _fade_in[i] = i * step;
         _fade_out[i] = (_hop_size - i) * step;
     }
+}
+
+void FX::reset_envelope_data() {
+    if(_env) delete [] _env;
+    if(_new_env) delete [] _new_env;
+    if(_env_freqs) delete [] _env_freqs;
+    if(_env_mags) delete [] _env_mags;
+    if(_spec_env) delete _spec_env;
+
+    _bin_size = 22050.0 / _env_size;
+    _env = new sample[_env_size];
+    _new_env = new sample[_env_size];
+    _env_freqs = new sample[_max_partials];
+    _env_mags = new sample[_max_partials];
+    memset(_env, 0, sizeof(sample) * _env_size);
+    memset(_new_env, 0, sizeof(sample) * _env_size);
+    memset(_env_freqs, 0, sizeof(sample) * _max_partials);
+    memset(_env_mags, 0, sizeof(sample) * _max_partials);
+    _spec_env = new SpectralEnvelope(_env_order, _env_size);
 }
 
 int FX::frame_size() {
@@ -133,7 +157,7 @@ void FX::hop_size(int new_hop_size) {
     _pd->hop_size(_hop_size);
     _synth->hop_size(_hop_size);
     _residual->hop_size(_hop_size);
-    recreate_fade_windows();
+    reset_fade_windows();
 }
 
 int FX::max_partials() {
@@ -145,6 +169,10 @@ void FX::max_partials(int new_max_partials) {
     _pt->max_partials(_max_partials);
     _frame->max_partials(_max_partials);
     _synth->max_partials(_max_partials);
+
+    _env_size = max(_max_partials / 2, 32);
+    _env_order = max(_max_partials / 2, 32);
+    reset_envelope_data();
 }
 
 sample FX::harmonic_scale() {
@@ -286,8 +314,11 @@ void FX::apply_envelope(simpl::Frame* frame) {
             frame->partial(i)->amplitude =
                 ((1.0 - bin_frac) * _env[bin]) + (bin_frac * _env[bin + 1]);
         }
-        else {
+        else if(bin == _env_size - 1){
             frame->partial(i)->amplitude = _env[bin];
+        }
+        else {
+            frame->partial(i)->amplitude = 0.f;
         }
     }
 }
@@ -334,6 +365,40 @@ void FX::harmonic_distortion(simpl::Frame* frame) {
 }
 
 // ---------------------------------------------------------------------------
+// Transient Processing
+// ---------------------------------------------------------------------------
+bool FX::preserve_transients() {
+    return _preserve_transients;
+}
+
+void FX::preserve_transients(bool preserve) {
+    _preserve_transients = preserve;
+}
+
+bool FX::transient_substitution() {
+    return _transient_substitution;
+}
+
+void FX::transient_substitution(bool substitute) {
+    _transient_substitution = substitute;
+}
+
+void FX::new_transient(int new_transient_size, sample* new_transient) {
+    if(new_transient_size <= 0) {
+        return;
+    }
+
+    _new_transient = new sample[new_transient_size];
+    memcpy(_new_transient, new_transient, sizeof(sample) * new_transient_size);
+}
+
+void FX::clear_new_transient() {
+    if(_new_transient) delete [] _new_transient;
+    _new_transient = NULL;
+    _new_transient_size = 0;
+}
+
+// ---------------------------------------------------------------------------
 // Process Frame
 // ---------------------------------------------------------------------------
 void FX::process_frame(int input_size, sample* input,
@@ -365,7 +430,8 @@ void FX::process_frame(int input_size, sample* input,
         reset();
     }
 
-    if(_current_segment == ONSET || _current_segment == ATTACK) {
+    if(_preserve_transients && (_current_segment == ONSET ||
+                                _current_segment == ATTACK))  {
         for(int i = 0; i < output_size; i++) {
             output[i] += input[i] * _transient_scale;
         }
@@ -385,7 +451,7 @@ void FX::process_frame(int input_size, sample* input,
             _residual->synth_frame(_residual_frame);
         }
 
-        if(_current_segment == SUSTAIN &&
+        if(_preserve_transients && _current_segment == SUSTAIN &&
            (_previous_segment == ONSET || _previous_segment == ATTACK)) {
             // end of transient section, crossfade
             for(int i = 0; i < output_size; i++) {

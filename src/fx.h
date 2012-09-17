@@ -27,6 +27,11 @@ class FX {
         sample _residual_scale;
         sample _transient_scale;
 
+        bool _preserve_transients;
+        bool _transient_substitution;
+        int _new_transient_size;
+        sample* _new_transient;
+
         sample _harmonic_distortion;
         sample _fundamental_frequency;
         sample _transposition;
@@ -56,7 +61,8 @@ class FX {
         sample _bin_size;
         SpectralEnvelope* _spec_env;
 
-        void recreate_fade_windows();
+        void reset_fade_windows();
+        void reset_envelope_data();
         virtual sample f0();
 
         void create_envelope(simpl::Frame* frame);
@@ -84,6 +90,14 @@ class FX {
         virtual void residual_scale(sample new_residual_scale);
         sample transient_scale();
         virtual void transient_scale(sample new_transient_scale);
+
+        bool preserve_transients();
+        void preserve_transients(bool preserve);
+
+        bool transient_substitution();
+        void transient_substitution(bool substitute);
+        void new_transient(int new_transient_size, sample* new_transient);
+        void clear_new_transient();
 
         sample transposition();
         void transposition(sample new_transposition);
