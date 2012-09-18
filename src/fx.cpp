@@ -430,6 +430,9 @@ void FX::process_frame(int input_size, sample* input,
         reset();
     }
 
+    _pd->find_peaks_in_frame(_frame);
+    _pt->update_partials(_frame);
+
     if(_preserve_transients && (_current_segment == ONSET ||
                                 _current_segment == ATTACK))  {
         for(int i = 0; i < output_size; i++) {
@@ -437,9 +440,6 @@ void FX::process_frame(int input_size, sample* input,
         }
     }
     else {
-        _pd->find_peaks_in_frame(_frame);
-        _pt->update_partials(_frame);
-
         create_envelope(_frame);
         transposition(_frame);
         harmonic_distortion(_frame);
