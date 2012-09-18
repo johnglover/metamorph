@@ -4,7 +4,10 @@
 #include "csdl.h"
 #include "metamorph.h"
 
-typedef struct NoTr NoTr;
+// ----------------------------------------------------------------------------
+// Main Metamorph Opcode
+// ----------------------------------------------------------------------------
+typedef struct Mm Mm;
 
 typedef struct {
     // structure holding csound global data (esr, ksmps, etc.)
@@ -14,10 +17,11 @@ typedef struct {
     MYFLT *output;
 
     // parameters
-    MYFLT *input, *harmonic_scale, *residual_scale, *transient_scale;    
+    MYFLT *input, *harmonic_scale, *residual_scale, *transient_scale,
+          *transposition_factor, *preserve_envelope;
 
     // opcode internal data
-    NoTr *data;
-} NOTR;
+    Mm *data;
+} MM;
 
 #endif

@@ -3,43 +3,34 @@
 using namespace metamorph;
 
 // ----------------------------------------------------------------------------
-// Noisiness/Transience (notr) definition
+// Main Metamorph Opcode
 // ----------------------------------------------------------------------------
-struct NoTr {
+struct Mm {
     FX* fx;
-    NoTr(CSOUND *csound, NOTR* params);
-    ~NoTr(void);
+    Mm(CSOUND *csound, MM* params);
+    ~Mm(void);
 };
 
-// ----------------------------------------------------------------------------
-// Noisiness/Transience (notr) contructor/destructor
-// ----------------------------------------------------------------------------
-NoTr::NoTr(CSOUND *csound, NOTR* params) {
+Mm::Mm(CSOUND *csound, MM* params) {
     fx = new FX();
     fx->hop_size(csound->ksmps);
 }
 
-NoTr::~NoTr() {
+Mm::~Mm() {
     delete fx;
 }
 
-extern "C" int notr_cleanup(CSOUND *, void * p);
+extern "C" int mm_cleanup(CSOUND *, void * p);
 
-// ----------------------------------------------------------------------------
-// Noisiness/Transience (notr) setup
-// ----------------------------------------------------------------------------
-extern "C" int notr_setup(CSOUND *csound, NOTR* p) {
-    p->data = new NoTr(csound, p);
+extern "C" int mm_setup(CSOUND *csound, MM* p) {
+    p->data = new Mm(csound, p);
     csound->RegisterDeinitCallback(
-        csound, p, (int (*)(CSOUND*, void*))notr_cleanup
+        csound, p, (int (*)(CSOUND*, void*))mm_cleanup
     );
     return OK;
 }
 
-// ---------------------------------------------------------------------------
-// Noisiness/Transience (notr)
-// ---------------------------------------------------------------------------
-extern "C" int notr(CSOUND *csound, NOTR* p) {
+extern "C" int mm(CSOUND *csound, MM* p) {
     int nsmps = csound->ksmps;
     MYFLT *output = p->output;
     MYFLT *input = p->input;
@@ -47,17 +38,15 @@ extern "C" int notr(CSOUND *csound, NOTR* p) {
     p->data->fx->harmonic_scale((*p->harmonic_scale));
     p->data->fx->residual_scale((*p->residual_scale));
     p->data->fx->transient_scale((*p->transient_scale));
+    p->data->fx->transposition((*p->transposition_factor));
 
     p->data->fx->process_frame(nsmps, input, nsmps, output);
 
     return OK;
 }
 
-// ----------------------------------------------------------------------------
-// Noisiness/Transience (notr) cleanup
-// ----------------------------------------------------------------------------
-extern "C" int notr_cleanup(CSOUND *csound, void * p) {
-    NOTR* pp = (NOTR *)p;
+extern "C" int mm_cleanup(CSOUND *csound, void * p) {
+    MM* pp = (MM *)p;
     delete pp->data;
     pp->data = 0;
     return OK;
@@ -69,8 +58,8 @@ extern "C" int notr_cleanup(CSOUND *csound, void * p) {
 extern "C" {
     static OENTRY localops[] =
     {
-        {(char *)"mmnotr",  sizeof(NOTR),  5, (char *)"a", (char *)"akkk",
-         (SUBR)notr_setup, 0, (SUBR)notr}
+        {(char *)"mm",  sizeof(MM),  5, (char *)"a", (char *)"akkkk",
+         (SUBR)mm_setup, 0, (SUBR)mm}
     };
 
     LINKAGE
