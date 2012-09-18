@@ -1,4 +1,5 @@
 import sys
+import scipy as sp
 import numpy as np
 import matplotlib.pyplot as plt
 import simpl
@@ -32,8 +33,15 @@ for i in range(len(freqs)):
     mags[i] = frames[0].peaks[i].amplitude
 
 env = e.env(freqs, mags)
+
+mags = 20 * sp.log10(mags)
+mags -= max(mags)
+env = 20 * sp.log10(env)
+env -= max(env)
 env_freqs = np.linspace(0, sampling_rate / 2, len(env))
 
 plt.plot(freqs, mags, 'r+')
 plt.plot(env_freqs, env, 'b-')
+plt.ylabel('Magnitude (dB)')
+plt.xlabel('Frequency (Hz)')
 plt.show()
