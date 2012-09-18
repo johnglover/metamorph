@@ -18,6 +18,7 @@ print 'Transposing by', transposition, 'semitones.'
 
 fx = metamorph.FX()
 fx.transposition = transposition
+fx.preserve_transients = False
 output = fx.process(audio)
 wav.write(output_path, sampling_rate, np.array(output * 32768, dtype=np.int16))
 
