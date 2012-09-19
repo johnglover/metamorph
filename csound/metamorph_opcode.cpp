@@ -35,6 +35,8 @@ extern "C" int mm(CSOUND *csound, MM* p) {
     MYFLT *output = p->output;
     MYFLT *input = p->input;
 
+    memset(output, 0, sizeof(MYFLT) * nsmps);
+
     p->data->fx->harmonic_scale((*p->harmonic_scale));
     p->data->fx->residual_scale((*p->residual_scale));
     p->data->fx->transient_scale((*p->transient_scale));

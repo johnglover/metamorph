@@ -15,7 +15,7 @@ nchnls = 1
 instr 1
     ainput init 0
     fin "example_in.wav", 0, 1, ainput
-    asig mm ainput, 0.1, 0.0, 0, 4
+    asig mm ainput, 1, 0, 0, 0
     out asig
 endin
 </CsInstruments>
