@@ -18,6 +18,7 @@ namespace metamorph
 class TestFX : public CPPUNIT_NS::TestCase {
     CPPUNIT_TEST_SUITE(TestFX);
     CPPUNIT_TEST(test_basic);
+    CPPUNIT_TEST(test_transposition_with_env);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -28,13 +29,13 @@ protected:
 
 public:
     void setUp() {
-        fx = new FX();
+        fx = NULL;
         sf = SndfileHandle("../tests/audio/flute.wav");
         num_samples = 4096;
     }
 
     void tearDown() {
-        delete fx;
+        if(fx) delete fx;
     }
 
     void test_basic() {
@@ -44,6 +45,36 @@ public:
 
         sample* output = new sample[num_samples];
         memset(output, 0, sizeof(sample) * num_samples);
+
+        if(fx) delete fx;
+        fx = new FX();
+
+        fx->process(num_samples, input, num_samples, output);
+
+        for(int i = 0; i < num_samples - fx->hop_size(); i += fx->hop_size()) {
+            double energy = 0.f;
+            for(int j = 0; j < fx->hop_size(); j++) {
+                energy += output[i + j] * output[i + j];
+            }
+            CPPUNIT_ASSERT(energy > 0.f);
+        }
+
+        delete [] input;
+        delete [] output;
+    }
+
+    void test_transposition_with_env() {
+        sample* input = new sample[num_samples];
+        memset(input, 0, sizeof(sample) * num_samples);
+        sf.read(input, num_samples);
+
+        sample* output = new sample[num_samples];
+        memset(output, 0, sizeof(sample) * num_samples);
+
+        if(fx) delete fx;
+        fx = new FX();
+        fx->transposition(4);
+        fx->preserve_envelope(true);
 
         fx->process(num_samples, input, num_samples, output);
 
