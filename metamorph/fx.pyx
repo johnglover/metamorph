@@ -128,10 +128,11 @@ cdef class SpectralEnvelope:
             del self.thisptr
             self.thisptr = <c_SpectralEnvelope*>0
 
-    def env(self, np.ndarray[dtype_t, ndim=1] freqs,
-                  np.ndarray[dtype_t, ndim=1] mags):
+    def envelope(self, np.ndarray[dtype_t, ndim=1] freqs,
+                       np.ndarray[dtype_t, ndim=1] mags):
         cdef np.ndarray[dtype_t, ndim=1] env = \
             np.zeros(self.thisptr.env_size())
-        self.thisptr.env(len(freqs), <double*> freqs.data, <double*> mags.data,
-                         len(env), <double*> env.data)
+        self.thisptr.envelope(len(freqs), <double*> freqs.data,
+                              <double*> mags.data,
+                              len(env), <double*> env.data)
         return env

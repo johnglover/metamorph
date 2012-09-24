@@ -54,11 +54,15 @@ class FX {
         sample _env_interp;
         int _env_size;
         int _env_order;
-        sample* _env;
-        sample* _new_env;
-        sample* _env_freqs;
-        sample* _env_mags;
+        int _env_stable_partial_duration;
         sample _bin_size;
+        std::vector<sample> _env;
+        std::vector<sample> _new_env;
+        std::vector<sample> _env_freqs;
+        std::vector<sample> _env_mags;
+        std::vector<long> _partial_lifetimes;
+        simpl::Frame* _env_frame;
+        simpl::PartialTracking* _env_pt;
         SpectralEnvelope* _spec_env;
 
         void reset_fade_windows();

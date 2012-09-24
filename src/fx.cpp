@@ -34,6 +34,7 @@ FX::FX() {
     _pd->max_peaks(_max_partials);
 
     _pt = new simpl::SMSPartialTracking();
+    ((simpl::SMSPartialTracking*)_pt)->realtime(true);
     _pt->max_partials(_max_partials);
 
     _synth = new simpl::SMSSynthesis();
@@ -48,20 +49,19 @@ FX::FX() {
     _create_env = false;
     _apply_env = false;
     _env_interp = 0.f;
-    _env_size = _max_partials / 2;
-    _env_order = _max_partials / 2;
-    _env = NULL;
-    _new_env = NULL;
-    _env_freqs = NULL;
-    _env_mags = NULL;
+    _env_size = 256;
+    _env_order = 128;
+    _env_stable_partial_duration = 3;
+    _env_frame = NULL;
+    _env_pt = NULL;
     _spec_env = NULL;
-    reset_envelope_data();
 
     _transient_substitution = false;
     _new_transient_size = 0;
     _new_transient = NULL;
 
     reset_fade_windows();
+    reset_envelope_data();
     reset();
 }
 
@@ -76,10 +76,8 @@ FX::~FX() {
     if(_synth) delete _synth;
     if(_residual) delete _residual;
     if(_new_transient) delete [] _new_transient;
-    if(_env) delete [] _env;
-    if(_new_env) delete [] _new_env;
-    if(_env_freqs) delete [] _env_freqs;
-    if(_env_mags) delete [] _env_mags;
+    if(_env_frame) delete _env_frame;
+    if(_env_pt) delete _env_pt;
     if(_spec_env) delete _spec_env;
 }
 
@@ -102,21 +100,27 @@ void FX::reset_fade_windows() {
 }
 
 void FX::reset_envelope_data() {
-    if(_env) delete [] _env;
-    if(_new_env) delete [] _new_env;
-    if(_env_freqs) delete [] _env_freqs;
-    if(_env_mags) delete [] _env_mags;
-    if(_spec_env) delete _spec_env;
-
     _bin_size = 22050.0 / _env_size;
-    _env = new sample[_env_size];
-    _new_env = new sample[_env_size];
-    _env_freqs = new sample[_max_partials];
-    _env_mags = new sample[_max_partials];
-    memset(_env, 0, sizeof(sample) * _env_size);
-    memset(_new_env, 0, sizeof(sample) * _env_size);
-    memset(_env_freqs, 0, sizeof(sample) * _max_partials);
-    memset(_env_mags, 0, sizeof(sample) * _max_partials);
+
+    _env.resize(_env_size);
+    _new_env.resize(_env_size);
+    _env_freqs.resize(_env_size);
+    _env_mags.resize(_env_size);
+
+    _partial_lifetimes.resize(_max_partials);
+
+    if(_env_frame) delete _env_frame;
+    _env_frame = new simpl::Frame(_frame_size, true);
+    _env_frame->max_peaks(_max_partials);
+    _env_frame->max_partials(_max_partials);
+
+    if(_env_pt) delete _env_pt;
+    _env_pt = new simpl::SMSPartialTracking();
+    ((simpl::SMSPartialTracking*)_env_pt)->realtime(true);
+    ((simpl::SMSPartialTracking*)_env_pt)->harmonic(true);
+    _env_pt->max_partials(_max_partials);
+
+    if(_spec_env) delete _spec_env;
     _spec_env = new SpectralEnvelope(_env_order, _env_size);
 }
 
@@ -136,6 +140,7 @@ void FX::frame_size(int new_frame_size) {
 
     if(_frame) delete _frame;
     _frame = new simpl::Frame(_frame_size, true);
+    _frame->max_peaks(_max_partials);
     _frame->max_partials(_max_partials);
 
     if(_residual_frame) delete _residual_frame;
@@ -146,6 +151,11 @@ void FX::frame_size(int new_frame_size) {
 
     _pd->frame_size(_frame_size);
     _residual->frame_size(_frame_size);
+
+    if(_env_frame) delete _env_frame;
+    _env_frame = new simpl::Frame(_frame_size, true);
+    _env_frame->max_peaks(_max_partials);
+    _env_frame->max_partials(_max_partials);
 }
 
 int FX::hop_size() {
@@ -167,11 +177,9 @@ int FX::max_partials() {
 void FX::max_partials(int new_max_partials) {
     _max_partials = new_max_partials;
     _pt->max_partials(_max_partials);
+    _frame->max_peaks(_max_partials);
     _frame->max_partials(_max_partials);
     _synth->max_partials(_max_partials);
-
-    _env_size = max(_max_partials / 2, 32);
-    _env_order = max(_max_partials / 2, 32);
     reset_envelope_data();
 }
 
@@ -267,20 +275,31 @@ void FX::create_envelope(simpl::Frame* frame) {
         return;
     }
 
-    int Np = 0;
-    int partial_step = _max_partials / _env_size;
-    int i = 0;
+    // copy peaks to _env_frame so a separate partial tracking
+    // phase can be performed. Partial tracking with the SMS harmonic
+    // flag set to true results in smoother and more consistent
+    // envelopes.
+    _env_frame->clear_peaks();
 
-    while(i < frame->num_partials()) {
-        if(frame->partial(i)->amplitude > 0.f) {
-            _env_freqs[Np] = frame->partial(i)->frequency;
-            _env_mags[Np] = frame->partial(i)->amplitude;
-            Np++;
-        }
-        i += partial_step;
+    for(int i = 0; i < frame->num_peaks(); i++) {
+        simpl::Peak* p = new simpl::Peak();
+        p->amplitude = frame->peak(i)->amplitude;
+        p->frequency = frame->peak(i)->frequency;
+        p->phase = frame->peak(i)->phase;
+        _env_frame->add_peak(p);
     }
+    _env_pt->update_partials(_env_frame);
 
-    _spec_env->env(Np, _env_freqs, _env_mags, _env_size, _env);
+    _env_freqs.clear();
+    _env_mags.clear();
+
+    for(int i = 0; i < _env_frame->num_partials(); i++) {
+        if(_env_frame->partial(i)->amplitude > 0.f) {
+            _env_freqs.push_back(_env_frame->partial(i)->frequency);
+            _env_mags.push_back(_env_frame->partial(i)->amplitude);
+        }
+    }
+    _spec_env->envelope(_env_freqs, _env_mags, _env);
 }
 
 void FX::apply_envelope(simpl::Frame* frame) {
@@ -290,31 +309,60 @@ void FX::apply_envelope(simpl::Frame* frame) {
 
     if(_env_interp > 0) {
         sample amp1, amp2;
-        for(int i = 0; i < _env_size; i++) {
+        for(int i = 0; i < _env.size(); i++) {
             amp1 = _env[i];
             amp2 = _new_env[i];
-            if(amp1 <= 0) amp1 = amp2;
-            if(amp2 <= 0) amp2 = amp1;
+
+            if(amp1 <= 0) {
+              amp1 = amp2;
+            }
+
+            if(amp2 <= 0) {
+              amp2 = amp1;
+            }
+
             _env[i] = amp1 + (_env_interp * (amp2 - amp1));
         }
     }
 
     int bin;
     sample bin_frac;
+    sample max_amp = 0;
 
+    // calculate the maximum partial amplitude in the current frame,
+    // and how long each partial has been active for
     for(int i = 0; i < frame->num_partials(); i++) {
-        if(frame->partial(i)->amplitude <= 0) {
+        if(frame->partial(i)->amplitude > max_amp) {
+            max_amp = frame->partial(i)->amplitude;
+        }
+
+        if(frame->partial(i)->amplitude > 0.f) {
+            _partial_lifetimes[i]++;
+        }
+        else {
+            _partial_lifetimes[i] = 0;
+        }
+    }
+    for(int i = frame->num_partials(); i < _max_partials; i++) {
+        _partial_lifetimes[i] = 0;
+    }
+
+    // set the amplitude of large amplitude partials and long-lived
+    // partials to match the spectral envelope value
+    for(int i = 0; i < frame->num_partials(); i++) {
+        if((frame->partial(i)->amplitude <= (max_amp * 0.1)) ||
+           (_partial_lifetimes[i] < _env_stable_partial_duration)) {
             continue;
         }
 
         bin = (int)(frame->partial(i)->frequency / _bin_size);
         bin_frac = (frame->partial(i)->frequency / (sample)_bin_size) - (sample)bin;
 
-        if(bin < _env_size - 1) {
+        if(bin < _env.size() - 1) {
             frame->partial(i)->amplitude =
                 ((1.0 - bin_frac) * _env[bin]) + (bin_frac * _env[bin + 1]);
         }
-        else if(bin == _env_size - 1){
+        else if(bin == _env.size() - 1){
             frame->partial(i)->amplitude = _env[bin];
         }
         else {
@@ -332,12 +380,12 @@ void FX::apply_envelope(int env_size, sample* env) {
     }
 
     _apply_env = true;
-    memcpy(_new_env, env, sizeof(sample) * env_size);
+    // memcpy(_new_env, env, sizeof(sample) * env_size);
 }
 
 void FX::clear_envelope() {
     _apply_env = false;
-    memset(_new_env, 0, sizeof(sample) * _max_partials);
+    // memset(_new_env, 0, sizeof(sample) * _max_partials);
 }
 
 // ---------------------------------------------------------------------------
@@ -430,9 +478,12 @@ void FX::process_frame(int input_size, sample* input,
         reset();
     }
 
+    // find sinusoidal peaks and partials
     _pd->find_peaks_in_frame(_frame);
     _pt->update_partials(_frame);
 
+    // don't use synthesis output for transient region if
+    // _preserve_transients is set to true
     if(_preserve_transients && (_current_segment == ONSET ||
                                 _current_segment == ATTACK))  {
         for(int i = 0; i < output_size; i++) {
