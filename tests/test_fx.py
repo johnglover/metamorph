@@ -45,7 +45,6 @@ class TestFX(object):
         fx = metamorph.FX()
         fx.fundamental_frequency = 440
         fx.harmonic_distortion = 0
-        fx.max_partials = 1
         fx.residual_scale = 0
         fx.transient_scale = 0
         output = fx.process(self.audio)
