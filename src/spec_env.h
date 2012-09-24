@@ -11,6 +11,7 @@
 // Based on code in libsms by Rich Eakin and Jordi Janer at the MTG, UPF, Barcelona.
 
 #include <math.h>
+#include <vector>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_blas.h>
@@ -32,17 +33,16 @@ namespace metamorph
 
 typedef double sample;
 
-sample sine(sample theta, sample sine_incr, sample* sine_table);
+sample sine(sample theta, sample sine_incr, std::vector<sample>& sine_table);
 
 
 class SpectralEnvelope {
     private:
         sample _lambda;
         sample _max_freq;
-        int _cepstrum_size;
         int _num_peaks;
         int _env_size;
-        sample* _cepstrum;
+        std::vector<sample> _cepstrum;
 
         gsl_matrix* _M;
         gsl_matrix* _Mt;
@@ -55,7 +55,7 @@ class SpectralEnvelope {
 
         sample _sine_scale;
         sample _sine_incr;
-        sample* _sine_table;
+        std::vector<sample> _sine_table;
 
         int _fft_size;
         sample* _fft_in;
@@ -65,16 +65,20 @@ class SpectralEnvelope {
         void create_cepstrum_data();
         void destroy_cepstrum_data();
         void reset();
-        void discrete_cepstrum(int freqs_size, sample* freqs, sample* mags);
-        void discrete_cepstrum_envelope(int env_size, sample* env);
+        void discrete_cepstrum(std::vector<sample>& freqs, std::vector<sample>& mags);
+        void discrete_cepstrum_envelope(std::vector<sample>& env);
 
     public:
         SpectralEnvelope(int order, int env_size);
         ~SpectralEnvelope();
+        sample max_frequency();
+        void max_frequency(sample new_max_freq);
         int env_size();
         void env_size(int new_env_size);
-        void env(int num_peaks, sample* freqs, sample* mags,
-                 int env_size, sample* e);
+        void envelope(std::vector<sample>& freqs, std::vector<sample>& mags,
+                      std::vector<sample>& env);
+        void envelope(int num_peaks, sample* freqs, sample* mags,
+                      int env_size, sample* env);
 };
 
 
