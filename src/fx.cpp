@@ -380,12 +380,12 @@ void FX::apply_envelope(int env_size, sample* env) {
     }
 
     _apply_env = true;
-    // memcpy(_new_env, env, sizeof(sample) * env_size);
+    _new_env.assign(env, env + env_size);
 }
 
 void FX::clear_envelope() {
     _apply_env = false;
-    // memset(_new_env, 0, sizeof(sample) * _max_partials);
+    _new_env.assign(_env_size, 0.f);
 }
 
 // ---------------------------------------------------------------------------
