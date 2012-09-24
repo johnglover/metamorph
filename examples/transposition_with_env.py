@@ -12,8 +12,6 @@ input_path = sys.argv[1]
 transposition = float(sys.argv[2])
 output_path = sys.argv[3]
 
-input_path = '../tests/audio/vox_c.wav'
-
 audio, sampling_rate = metamorph.read_wav(input_path)
 
 print 'Transposing by', transposition, 'semitones.'
