@@ -41,6 +41,8 @@ class FX {
         sample* _new_transient;
 
         std::vector<sample> _input;
+
+        int _fade_duration;
         sample* _fade_in;
         sample* _fade_out;
 

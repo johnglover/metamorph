@@ -11,24 +11,10 @@ namespace metamorph
 {
 
 
-class TransientRegion {
-    public:
-        long start;
-        long end;
-
-        TransientRegion() {
-            start = 0;
-            end = 0;
-        }
-};
-
-
 class TimeScale : public FX {
     private:
         sample _scale_factor;
-        std::vector<TransientRegion> _transients;
-
-        bool is_transient_region(long sample_number);
+        std::vector<int> _segments;
 
     public:
         TimeScale();

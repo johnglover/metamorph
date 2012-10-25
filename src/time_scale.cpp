@@ -17,22 +17,13 @@ void TimeScale::scale_factor(sample new_scale_factor) {
     _scale_factor = new_scale_factor;
 }
 
-bool TimeScale::is_transient_region(long sample_number) {
-    for(int i = 0; i < _transients.size(); i++) {
-        if(sample_number >= _transients[i].start &&
-           sample_number <= _transients[i].end) {
-            return true;
-        }
-    }
-    return false;
-}
-
 void TimeScale::process(long input_size, sample* input,
                         long output_size, sample* output) {
 
     // pass 1: get analysis frames and calculate locations of transient regions
     reset();
-    _transients.clear();
+    _segments.clear();
+    _segments.resize(input_size / _hop_size);
 
     simpl::Frames peaks = _pd->find_peaks(input_size, input);
     simpl::Frames frames = _pt->find_partials(peaks);
@@ -42,19 +33,11 @@ void TimeScale::process(long input_size, sample* input,
     for(long i = 0; i < input_size - _hop_size; i += _hop_size) {
         _previous_segment = _current_segment;
         _current_segment = _ns.segment(_hop_size, &input[i]);
+        _segments[i / _hop_size] = _current_segment;
 
-        if(_current_segment == ONSET) {
-            TransientRegion t;
-            t.start = i;
-            _transients.push_back(t);
+        if(_current_segment == NONE || _current_segment == ONSET ||
+           _current_segment == ATTACK) {
             transient_length += _hop_size;
-        }
-        else if(_current_segment == ATTACK) {
-            transient_length += _hop_size;
-        }
-        else if(_current_segment == SUSTAIN &&
-                (_previous_segment == ONSET || _previous_segment == ATTACK)) {
-            _transients.back().end = i;
         }
     }
 
@@ -65,27 +48,44 @@ void TimeScale::process(long input_size, sample* input,
     // so as the total time scale factor is achieved
     long target_output_size = (long)(input_size * _scale_factor);
     long scaled_samples = target_output_size - transient_length;
-    sample step_size = (sample)(input_size - transient_length) / scaled_samples;
-
+    sample step_size = (sample)(input_size - transient_length) /
+                               scaled_samples;
     sample current_frame = 0;
     long output_sample = 0;
 
-    while((current_frame < frames.size() && 
+    while((current_frame < frames.size() &&
           (output_sample < (output_size - _hop_size)))) {
         int n = (int)floor(current_frame);
 
         _synth->synth_frame(frames[n]);
 
-        for(int i = 0; i < _hop_size; i++) {
-            output[output_sample] += frames[n]->synth()[i];
-            output_sample++;
+        if(_segments[n] == NONE || _segments[n] == ONSET ||
+           _segments[n] == ATTACK) {
+            for(int i = 0; i < _hop_size; i++) {
+                output[output_sample] = frames[n]->audio()[i];
+                output_sample++;
+            }
+            current_frame += 1;
         }
-
-        if(!is_transient_region(n * _hop_size)) {
-            current_frame += step_size;
+        else if(_segments[n] == SUSTAIN &&
+                (_segments[n - 1] == ONSET || _segments[n - 1] == ATTACK)) {
+            for(int i = 0; i < _fade_duration; i++) {
+                output[output_sample] = frames[n]->audio()[i] * _fade_out[i];
+                output[output_sample] += frames[n]->synth()[i] * _fade_in[i];
+                output_sample++;
+            }
+            for(int i = _fade_duration; i < _hop_size; i++) {
+                output[output_sample] += frames[n]->synth()[i];
+                output_sample++;
+            }
+            current_frame += 1;
         }
         else {
-            current_frame += 1;
+            for(int i = 0; i < _hop_size; i++) {
+                output[output_sample] = frames[n]->synth()[i];
+                output_sample++;
+            }
+            current_frame += step_size;
         }
     }
 }

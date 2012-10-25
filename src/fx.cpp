@@ -16,6 +16,8 @@ FX::FX() {
     _preserve_transients = true;
 
     _input.resize(_hop_size);
+
+    _fade_duration = _hop_size;
     _fade_in = NULL;
     _fade_out = NULL;
 
@@ -86,13 +88,16 @@ void FX::reset_fade_windows() {
     if(_fade_in) delete [] _fade_in;
     if(_fade_out) delete [] _fade_out;
 
-    _fade_in = new sample[_hop_size];
-    _fade_out = new sample[_hop_size];
+    _fade_in = new sample[_fade_duration];
+    _fade_out = new sample[_fade_duration];
 
-    sample step = 1.f / _hop_size;
-    for(int i = 0; i < _hop_size; i++) {
-        _fade_in[i] = i * step;
-        _fade_out[i] = (_hop_size - i) * step;
+    sample step = 1.f / _fade_duration;
+    for(int i = 0; i < _fade_duration; i++) {
+        // _fade_in[i] = i * step;
+        // _fade_out[i] = (_fade_duration - i) * step;
+        sample t = (float)i / _fade_duration;
+        _fade_in[i] = pow(0.5 - (0.5 * cos(M_PI * t)), 0.5);
+        _fade_out[i] = pow(0.5 + (0.5 * cos(M_PI * t)), 0.5);
     }
 }
 
@@ -491,11 +496,18 @@ void FX::process_frame(int input_size, sample* input,
             }
 
             // end of transient section, crossfade
-            for(int i = 0; i < output_size; i++) {
+            for(int i = 0; i < _fade_duration; i++) {
                 output[i] += _input[i] * _fade_out[i] * _transient_scale;
-                output[i] += _frame->synth()[i] * _fade_in[i] * _harmonic_scale;
+                output[i] += _frame->synth()[i] * _fade_in[i] *
+                             _harmonic_scale;
                 output[i] += _residual_frame->synth_residual()[i] *
                              _fade_in[i] * _residual_scale;
+            }
+
+            for(int i = _fade_duration; i < _hop_size; i++) {
+                output[i] += _frame->synth()[i] * _harmonic_scale;
+                output[i] += _residual_frame->synth_residual()[i] *
+                             _residual_scale;
             }
         }
         else {
