@@ -17,6 +17,7 @@ cdef extern from "../src/fx.h" namespace "metamorph":
         void hop_size(int new_hop_size)
         int max_partials()
         void max_partials(int new_max_partials)
+
         void add_harmonic_transformation(c_HarmonicTransformation* h)
         void clear_harmonic_transformations()
         double harmonic_scale()
@@ -27,8 +28,14 @@ cdef extern from "../src/fx.h" namespace "metamorph":
         void env_interp(double new_env_interp)
         void apply_envelope(int env_size, double* env)
         void clear_envelope()
+
+        void add_noise_transformation(c_NoiseTransformation* h)
+        void clear_noise_transformations()
         double residual_scale()
         void residual_scale(double new_residual_scale)
+
+        void add_transient_transformation(c_TransientTransformation* h)
+        void clear_transient_transformations()
         double transient_scale()
         bool preserve_transients()
         void preserve_transients(bool preserve)
@@ -37,6 +44,7 @@ cdef extern from "../src/fx.h" namespace "metamorph":
         void new_transient(int new_transient_size, double* new_transient)
         void clear_new_transient()
         void transient_scale(double new_transient_scale)
+
         void process_frame(int input_size, double* input,
                            int output_size, double* output)
         void process(long input_size, double* input,
@@ -70,6 +78,11 @@ cdef extern from "../src/transformations.h" namespace "metamorph":
         void harmonic_distortion(double new_harmonic_distortion)
         double fundamental_frequency()
         void fundamental_frequency(double new_fundamental_frequency)
+
+    cdef cppclass c_TransientLPF \
+        "metamorph::TransientLPF"(c_TransientTransformation):
+        c_TransientLPF()
+        c_TransientLPF(double frequency)
 
 cdef extern from "../src/time_scale.h" namespace "metamorph":
     cdef cppclass c_TimeScale "metamorph::TimeScale"(c_FX):

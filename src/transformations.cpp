@@ -82,3 +82,54 @@ void HarmonicDistortion::process_frame(simpl::Frame* frame) {
         }
     }
 }
+
+
+// ---------------------------------------------------------------------------
+// TransientLPF
+//
+// Filter transients using a Butterworth low-pass filter (2nd order).
+// Based on Victor Lazzarini's implementation from The SndObj library.
+// ---------------------------------------------------------------------------
+TransientLPF::TransientLPF() {
+    _frequency = 0.0;
+    _sampling_rate = 44100;
+    _delay = NULL;
+    reset();
+}
+
+TransientLPF::TransientLPF(sample frequency) {
+    _frequency = frequency;
+    _sampling_rate = 44100;
+    _delay = NULL;
+    reset();
+}
+
+TransientLPF::~TransientLPF() {
+    if(_delay) delete [] _delay;
+    _delay = NULL;
+}
+
+void TransientLPF::reset() {
+    if(_delay) delete [] _delay;
+    _delay = new sample[2];
+    _delay[0] = _delay[1] = 0.0;
+
+    _C = 1 / (tan(M_PI * _frequency / _sampling_rate));
+    _a = 1 / (1 + sqrt(2.0) * _C + (_C * _C));
+    _a1 = 2 * _a;
+    _a2 = _a;
+    _b1 = 2 * (1 - (_C * _C)) *_a;
+    _b2 = (1 - sqrt(2.0) * _C + (_C * _C)) * _a;
+}
+
+void TransientLPF::process_frame(std::vector<sample>& samples) {
+    sample w = 0.0;
+
+    for(int n = 0; n < samples.size(); n++) {
+        w = (_a * samples[n]) - (_b1 * _delay[0]) - (_b2 * _delay[1]);
+        samples[n] = w + (_a1 * _delay[0]) + (_a2 * _delay[1]);
+
+        _delay[1] = _delay[0];
+        _delay[0] = w;
+    }
+}

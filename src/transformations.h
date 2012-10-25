@@ -2,6 +2,7 @@
 #define METAMORPH_TRANSFORMATIONS_H
 
 
+#include <math.h>
 #include "simpl/simpl.h"
 
 #ifndef TWELFTH_ROOT_2
@@ -19,15 +20,11 @@ class Transformation {
     public:
         virtual void process_frame(simpl::Frame* frame) = 0;
 };
-
-
 class HarmonicTransformation : public Transformation {};
-
-
 class NoiseTransformation : public Transformation {};
 
 
-class TransientTransformation : public Transformation {
+class TransientTransformation {
     public:
         virtual void process_frame(std::vector<sample>& samples) = 0;
 };
@@ -62,6 +59,27 @@ class HarmonicDistortion : public HarmonicTransformation {
         sample fundamental_frequency();
         void fundamental_frequency(sample new_fundamental);
         void process_frame(simpl::Frame* frame);
+};
+
+
+class TransientLPF : public TransientTransformation {
+    private:
+        sample _frequency;
+        int _sampling_rate;
+        sample* _delay;
+        sample _a;
+        sample _a1;
+        sample _a2;
+        sample _b1;
+        sample _b2;
+        sample _C;
+        void reset();
+
+    public:
+        TransientLPF();
+        TransientLPF(sample frequency);
+        ~TransientLPF();
+        void process_frame(std::vector<sample>& samples);
 };
 
 

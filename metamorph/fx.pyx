@@ -69,6 +69,24 @@ cdef class FX:
     def clear_envelope(self):
         self.thisptr.clear_envelope()
 
+    def add_harmonic_transformation(self, HarmonicTransformation t not None):
+        self.thisptr.add_harmonic_transformation(t.thisptr)
+
+    def clear_harmonic_transformations(self):
+        self.thisptr.clear_harmonic_transformations()
+
+    def add_noise_transformation(self, NoiseTransformation t not None):
+        self.thisptr.add_noise_transformation(t.thisptr)
+
+    def clear_noise_transformations(self):
+        self.thisptr.clear_noise_transformations()
+
+    def add_transient_transformation(self, TransientTransformation t not None):
+        self.thisptr.add_transient_transformation(t.thisptr)
+
+    def clear_transient_transformations(self):
+        self.thisptr.clear_transient_transformations()
+
     def add_harmonic_transformation(self, HarmonicTransformation h not None):
         self.thisptr.add_harmonic_transformation(h.thisptr)
 
@@ -142,6 +160,18 @@ cdef class HarmonicDistortion(HarmonicTransformation):
                 .fundamental_frequency()
         def __set__(self, double n):
             (<c_HarmonicDistortion*>self.thisptr).fundamental_frequency(n)
+
+
+cdef class TransientLPF(TransientTransformation):
+    def __cinit__(self, double frequency=0):
+        if self.thisptr:
+            del self.thisptr
+        self.thisptr = new c_TransientLPF(frequency)
+
+    def __dealloc__(self):
+        if self.thisptr:
+            del self.thisptr
+            self.thisptr = <c_TransientLPF*>0
 
 
 cdef class TimeScale(FX):

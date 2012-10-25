@@ -7,6 +7,7 @@ dtype = np.double
 FX = fx.FX
 Transposition = fx.Transposition
 HarmonicDistortion = fx.HarmonicDistortion
+TransientLPF = fx.TransientLPF
 TimeScale = fx.TimeScale
 SpectralEnvelope = fx.SpectralEnvelope
 
