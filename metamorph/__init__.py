@@ -8,6 +8,7 @@ FX = fx.FX
 Transposition = fx.Transposition
 HarmonicDistortion = fx.HarmonicDistortion
 TransientLPF = fx.TransientLPF
+TransientHPF = fx.TransientHPF
 TimeScale = fx.TimeScale
 SpectralEnvelope = fx.SpectralEnvelope
 

@@ -114,22 +114,73 @@ void TransientLPF::reset() {
     _delay = new sample[2];
     _delay[0] = _delay[1] = 0.0;
 
-    _C = 1 / (tan(M_PI * _frequency / _sampling_rate));
-    _a = 1 / (1 + sqrt(2.0) * _C + (_C * _C));
-    _a1 = 2 * _a;
+    _c = 1.0 / (tan(M_PI * _frequency / _sampling_rate));
+    _a = 1.0 / (1.0 + ROOT_2 * _c + (_c * _c));
+    _a1 = 2.0 * _a;
     _a2 = _a;
-    _b1 = 2 * (1 - (_C * _C)) *_a;
-    _b2 = (1 - sqrt(2.0) * _C + (_C * _C)) * _a;
+    _b1 = 2.0 * (1.0 - (_c * _c)) *_a;
+    _b2 = (1.0 - ROOT_2 * _c + (_c * _c)) * _a;
 }
 
 void TransientLPF::process_frame(std::vector<sample>& samples) {
-    sample w = 0.0;
+    sample t = 0.0;
 
     for(int n = 0; n < samples.size(); n++) {
-        w = (_a * samples[n]) - (_b1 * _delay[0]) - (_b2 * _delay[1]);
-        samples[n] = w + (_a1 * _delay[0]) + (_a2 * _delay[1]);
+        t = samples[n] - _b1 * _delay[0] - _b2 * _delay[1];
+        samples[n] = t * _a + _a1 * _delay[0] + _a2 * _delay[1];
 
         _delay[1] = _delay[0];
-        _delay[0] = w;
+        _delay[0] = t;
+    }
+}
+
+
+// ---------------------------------------------------------------------------
+// TransientHPF
+//
+// Filter transients using a Butterworth high-pass filter (2nd order).
+// Based on Victor Lazzarini's implementation from The SndObj library.
+// ---------------------------------------------------------------------------
+TransientHPF::TransientHPF() {
+    _frequency = 0.0;
+    _sampling_rate = 44100;
+    _delay = NULL;
+    reset();
+}
+
+TransientHPF::TransientHPF(sample frequency) {
+    _frequency = frequency;
+    _sampling_rate = 44100;
+    _delay = NULL;
+    reset();
+}
+
+TransientHPF::~TransientHPF() {
+    if(_delay) delete [] _delay;
+    _delay = NULL;
+}
+
+void TransientHPF::reset() {
+    if(_delay) delete [] _delay;
+    _delay = new sample[2];
+    _delay[0] = _delay[1] = 0.0;
+
+    _c = tan(M_PI * _frequency / _sampling_rate);
+    _a = 1.0 / (1 + ROOT_2 * _c + (_c * _c));
+    _a1 = -2.0 * _a;
+    _a2 = _a;
+    _b1 = 2.0 * ((_c * _c) - 1.0) * _a;
+    _b2 = (1.0 - ROOT_2 * _c + (_c * _c)) * _a;
+}
+
+void TransientHPF::process_frame(std::vector<sample>& samples) {
+    sample t = 0.0;
+
+    for(int n = 0; n < samples.size(); n++) {
+        t = samples[n] - _b1 * _delay[0] - _b2 * _delay[1];
+        samples[n] = t * _a + _a1 * _delay[0] + _a2 * _delay[1];
+
+        _delay[1] = _delay[0];
+        _delay[0] = t;
     }
 }

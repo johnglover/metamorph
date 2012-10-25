@@ -174,6 +174,18 @@ cdef class TransientLPF(TransientTransformation):
             self.thisptr = <c_TransientLPF*>0
 
 
+cdef class TransientHPF(TransientTransformation):
+    def __cinit__(self, double frequency=0):
+        if self.thisptr:
+            del self.thisptr
+        self.thisptr = new c_TransientHPF(frequency)
+
+    def __dealloc__(self):
+        if self.thisptr:
+            del self.thisptr
+            self.thisptr = <c_TransientHPF*>0
+
+
 cdef class TimeScale(FX):
     def __cinit__(self):
         if self.thisptr:

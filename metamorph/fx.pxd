@@ -84,6 +84,11 @@ cdef extern from "../src/transformations.h" namespace "metamorph":
         c_TransientLPF()
         c_TransientLPF(double frequency)
 
+    cdef cppclass c_TransientHPF \
+        "metamorph::TransientHPF"(c_TransientTransformation):
+        c_TransientHPF()
+        c_TransientHPF(double frequency)
+
 cdef extern from "../src/time_scale.h" namespace "metamorph":
     cdef cppclass c_TimeScale "metamorph::TimeScale"(c_FX):
         c_TimeScale()

@@ -9,6 +9,10 @@
 #define TWELFTH_ROOT_2 1.0594630943592953
 #endif
 
+#ifndef ROOT_2
+#define ROOT_2 1.4142135623730950488
+#endif
+
 namespace metamorph
 {
 
@@ -72,13 +76,34 @@ class TransientLPF : public TransientTransformation {
         sample _a2;
         sample _b1;
         sample _b2;
-        sample _C;
+        sample _c;
         void reset();
 
     public:
         TransientLPF();
         TransientLPF(sample frequency);
         ~TransientLPF();
+        void process_frame(std::vector<sample>& samples);
+};
+
+
+class TransientHPF : public TransientTransformation {
+    private:
+        sample _frequency;
+        int _sampling_rate;
+        sample* _delay;
+        sample _a;
+        sample _a1;
+        sample _a2;
+        sample _b1;
+        sample _b2;
+        sample _c;
+        void reset();
+
+    public:
+        TransientHPF();
+        TransientHPF(sample frequency);
+        ~TransientHPF();
         void process_frame(std::vector<sample>& samples);
 };
 
