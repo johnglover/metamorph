@@ -18,6 +18,7 @@ print 'Time scaling by a factor of', time_scale_factor
 
 ts = metamorph.TimeScale()
 ts.scale_factor = time_scale_factor
+ts.residual_scale = 0
 
 output = ts.process(audio)
 wav.write(output_path, sampling_rate, np.array(output * 32768, dtype=np.int16))

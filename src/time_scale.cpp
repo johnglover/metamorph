@@ -51,39 +51,52 @@ void TimeScale::process(long input_size, sample* input,
     sample step_size = (sample)(input_size - transient_length) /
                                scaled_samples;
     sample current_frame = 0;
-    long output_sample = 0;
+    long n = 0;
+    int f = 0;
 
     while((current_frame < frames.size() &&
-          (output_sample < (output_size - _hop_size)))) {
-        int n = (int)floor(current_frame);
+          (n < (output_size - _hop_size)))) {
+        f = (int)floor(current_frame);
 
-        _synth->synth_frame(frames[n]);
+        _residual_frame->clear();
+        _residual_frame->audio(frames[f]->audio());
 
-        if(_segments[n] == NONE || _segments[n] == ONSET ||
-           _segments[n] == ATTACK) {
+        _synth->synth_frame(frames[f]);
+        _residual->synth_frame(_residual_frame);
+
+        if(_segments[f] == NONE || _segments[f] == ONSET ||
+           _segments[f] == ATTACK) {
             for(int i = 0; i < _hop_size; i++) {
-                output[output_sample] = frames[n]->audio()[i];
-                output_sample++;
+                output[n] = frames[f]->audio()[i] * _transient_scale;
+                n++;
             }
             current_frame += 1;
         }
-        else if(_segments[n] == SUSTAIN &&
-                (_segments[n - 1] == ONSET || _segments[n - 1] == ATTACK)) {
+        else if(_segments[f] == SUSTAIN &&
+                (_segments[f - 1] == ONSET || _segments[f - 1] == ATTACK)) {
             for(int i = 0; i < _fade_duration; i++) {
-                output[output_sample] = frames[n]->audio()[i] * _fade_out[i];
-                output[output_sample] += frames[n]->synth()[i] * _fade_in[i];
-                output_sample++;
+                output[n] = frames[f]->audio()[i] * _fade_out[i] *
+                            _transient_scale;
+                output[n] += frames[f]->synth()[i] * _fade_in[i] *
+                            _harmonic_scale;
+                output[n] += _residual_frame->synth_residual()[i] *
+                             _fade_in[i] * _residual_scale;
+                n++;
             }
             for(int i = _fade_duration; i < _hop_size; i++) {
-                output[output_sample] += frames[n]->synth()[i];
-                output_sample++;
+                output[n] += frames[f]->synth()[i] * _harmonic_scale;
+                output[n] += _residual_frame->synth_residual()[i] *
+                             _fade_in[i] * _residual_scale;
+                n++;
             }
             current_frame += 1;
         }
         else {
             for(int i = 0; i < _hop_size; i++) {
-                output[output_sample] = frames[n]->synth()[i];
-                output_sample++;
+                output[n] = frames[f]->synth()[i] * _harmonic_scale;
+                output[n] += _residual_frame->synth_residual()[i] *
+                             _residual_scale;
+                n++;
             }
             current_frame += step_size;
         }
