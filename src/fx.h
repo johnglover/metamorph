@@ -28,6 +28,8 @@ class FX {
         int _previous_segment;
 
         std::vector<HarmonicTransformation*> _harm_trans;
+        std::vector<NoiseTransformation*> _noise_trans;
+        std::vector<TransientTransformation*> _transient_trans;
 
         sample _harmonic_scale;
         sample _residual_scale;
@@ -38,6 +40,7 @@ class FX {
         int _new_transient_size;
         sample* _new_transient;
 
+        std::vector<sample> _input;
         sample* _fade_in;
         sample* _fade_out;
 
@@ -89,7 +92,7 @@ class FX {
         // -------------------------------------------------------------------
         // Harmonic transformations
 
-        void add_harmonic_transformation(HarmonicTransformation* h);
+        void add_harmonic_transformation(HarmonicTransformation* trans);
         void clear_harmonic_transformations();
 
         sample harmonic_scale();
@@ -105,11 +108,17 @@ class FX {
         // -------------------------------------------------------------------
         // Noise transformations
 
+        void add_noise_transformation(NoiseTransformation* trans);
+        void clear_noise_transformations();
+
         sample residual_scale();
         virtual void residual_scale(sample new_residual_scale);
 
         // -------------------------------------------------------------------
         // Transient transformations
+
+        void add_transient_transformation(TransientTransformation* trans);
+        void clear_transient_transformations();
 
         sample transient_scale();
         virtual void transient_scale(sample new_transient_scale);

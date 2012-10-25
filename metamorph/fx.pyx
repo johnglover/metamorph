@@ -92,6 +92,14 @@ cdef class HarmonicTransformation:
     cdef c_HarmonicTransformation* thisptr
 
 
+cdef class NoiseTransformation:
+    cdef c_NoiseTransformation* thisptr
+
+
+cdef class TransientTransformation:
+    cdef c_TransientTransformation* thisptr
+
+
 cdef class Transposition(HarmonicTransformation):
     def __cinit__(self, int transposition=0):
         if self.thisptr:

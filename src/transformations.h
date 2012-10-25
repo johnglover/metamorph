@@ -14,9 +14,22 @@ namespace metamorph
 
 typedef double sample;
 
-class HarmonicTransformation {
+
+class Transformation {
     public:
         virtual void process_frame(simpl::Frame* frame) = 0;
+};
+
+
+class HarmonicTransformation : public Transformation {};
+
+
+class NoiseTransformation : public Transformation {};
+
+
+class TransientTransformation : public Transformation {
+    public:
+        virtual void process_frame(std::vector<sample>& samples) = 0;
 };
 
 
@@ -50,6 +63,7 @@ class HarmonicDistortion : public HarmonicTransformation {
         void fundamental_frequency(sample new_fundamental);
         void process_frame(simpl::Frame* frame);
 };
+
 
 } // end of namespace metamorph
 

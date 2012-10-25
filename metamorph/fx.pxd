@@ -47,6 +47,13 @@ cdef extern from "../src/transformations.h" namespace "metamorph":
     cdef cppclass c_HarmonicTransformation "metamorph::HarmonicTransformation":
         c_HarmonicTransformation()
 
+    cdef cppclass c_NoiseTransformation "metamorph::NoiseTransformation":
+        c_NoiseTransformation()
+
+    cdef cppclass c_TransientTransformation \
+        "metamorph::TransientTransformation":
+        c_TransientTransformation()
+
     cdef cppclass c_Transposition \
         "metamorph::Transposition"(c_HarmonicTransformation):
         c_Transposition()

@@ -15,6 +15,7 @@ FX::FX() {
 
     _preserve_transients = true;
 
+    _input.resize(_hop_size);
     _fade_in = NULL;
     _fade_out = NULL;
 
@@ -163,6 +164,7 @@ void FX::hop_size(int new_hop_size) {
     _pd->hop_size(_hop_size);
     _synth->hop_size(_hop_size);
     _residual->hop_size(_hop_size);
+    _input.resize(_hop_size);
     reset_fade_windows();
 }
 
@@ -179,6 +181,17 @@ void FX::max_partials(int new_max_partials) {
     reset_envelope_data();
 }
 
+// ---------------------------------------------------------------------------
+// Harmonic Transformations
+// ---------------------------------------------------------------------------
+void FX::add_harmonic_transformation(HarmonicTransformation* trans) {
+    _harm_trans.push_back(trans);
+}
+
+void FX::clear_harmonic_transformations() {
+    _harm_trans.clear();
+}
+
 sample FX::harmonic_scale() {
     return _harmonic_scale;
 }
@@ -187,32 +200,6 @@ void FX::harmonic_scale(sample new_harmonic_scale) {
     _harmonic_scale = new_harmonic_scale;
 }
 
-sample FX::residual_scale() {
-    return _residual_scale;
-}
-
-void FX::residual_scale(sample new_residual_scale) {
-    _residual_scale = new_residual_scale;
-}
-
-sample FX::transient_scale() {
-    return _transient_scale;
-}
-
-void FX::transient_scale(sample new_transient_scale) {
-    _transient_scale = new_transient_scale;
-}
-
-// ---------------------------------------------------------------------------
-// Harmonic Transformations
-// ---------------------------------------------------------------------------
-void FX::add_harmonic_transformation(HarmonicTransformation* h) {
-    _harm_trans.push_back(h);
-}
-
-void FX::clear_harmonic_transformations() {
-    _harm_trans.clear();
-}
 
 bool FX::preserve_envelope() {
     return _create_env && _apply_env;
@@ -353,8 +340,43 @@ void FX::clear_envelope() {
 }
 
 // ---------------------------------------------------------------------------
+// Noise Transformations
+// ---------------------------------------------------------------------------
+void FX::add_noise_transformation(NoiseTransformation* trans) {
+    _noise_trans.push_back(trans);
+}
+
+void FX::clear_noise_transformations() {
+    _noise_trans.clear();
+}
+
+sample FX::residual_scale() {
+    return _residual_scale;
+}
+
+void FX::residual_scale(sample new_residual_scale) {
+    _residual_scale = new_residual_scale;
+}
+
+// ---------------------------------------------------------------------------
 // Transient Processing and Transformations
 // ---------------------------------------------------------------------------
+void FX::add_transient_transformation(TransientTransformation* trans) {
+    _transient_trans.push_back(trans);
+}
+
+void FX::clear_transient_transformations() {
+    _transient_trans.clear();
+}
+
+sample FX::transient_scale() {
+    return _transient_scale;
+}
+
+void FX::transient_scale(sample new_transient_scale) {
+    _transient_scale = new_transient_scale;
+}
+
 bool FX::preserve_transients() {
     return _preserve_transients;
 }
@@ -397,6 +419,10 @@ void FX::process_frame(int input_size, sample* input,
     _residual_frame->clear();
 
     // get audio input, appending to previous samples if necessary
+    for(int i = 0; i < _hop_size; i++) {
+        _input[i] = input[i];
+    }
+
     if(_hop_size == _frame_size) {
         _frame->audio(input);
         _residual_frame->audio(input);
@@ -424,32 +450,49 @@ void FX::process_frame(int input_size, sample* input,
 
     // don't use synthesis output for transient region if
     // _preserve_transients is set to true
-    if(_preserve_transients && (_current_segment == ONSET ||
-                                _current_segment == ATTACK))  {
-        for(int i = 0; i < output_size; i++) {
-            output[i] += input[i] * _transient_scale;
+    if(_preserve_transients && (_transient_scale > 0) &&
+       (_current_segment == ONSET || _current_segment == ATTACK)) {
+        // perform all transient transformations
+        for(int i = 0; i < _transient_trans.size(); i++) {
+            _transient_trans[i]->process_frame(_input);
+        }
+
+        for(int i = 0; i < _hop_size; i++) {
+            output[i] += _input[i] * _transient_scale;
         }
     }
     else {
-        create_envelope(_frame);
-
         // perform all harmonic transformations
-        for(int i = 0; i < _harm_trans.size(); i++) {
-            _harm_trans[i]->process_frame(_frame);
+        if(_harmonic_scale > 0) {
+            create_envelope(_frame);
+
+            for(int i = 0; i < _harm_trans.size(); i++) {
+                _harm_trans[i]->process_frame(_frame);
+            }
+
+            apply_envelope(_frame);
+            _synth->synth_frame(_frame);
         }
 
-        apply_envelope(_frame);
-        _synth->synth_frame(_frame);
-
+        // perform all noise transformations
         if(_residual_scale > 0) {
+            for(int i = 0; i < _noise_trans.size(); i++) {
+                _noise_trans[i]->process_frame(_residual_frame);
+            }
+
             _residual->synth_frame(_residual_frame);
         }
 
         if(_preserve_transients && _current_segment == SUSTAIN &&
            (_previous_segment == ONSET || _previous_segment == ATTACK)) {
+            // perform all transient transformations
+            for(int i = 0; i < _transient_trans.size(); i++) {
+                _transient_trans[i]->process_frame(_input);
+            }
+
             // end of transient section, crossfade
             for(int i = 0; i < output_size; i++) {
-                output[i] += input[i] * _fade_out[i] * _transient_scale;
+                output[i] += _input[i] * _fade_out[i] * _transient_scale;
                 output[i] += _frame->synth()[i] * _fade_in[i] * _harmonic_scale;
                 output[i] += _residual_frame->synth_residual()[i] *
                              _fade_in[i] * _residual_scale;
