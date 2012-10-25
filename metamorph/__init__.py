@@ -5,6 +5,7 @@ import fx
 dtype = np.double
 
 FX = fx.FX
+Transposition = fx.Transposition
 TimeScale = fx.TimeScale
 SpectralEnvelope = fx.SpectralEnvelope
 

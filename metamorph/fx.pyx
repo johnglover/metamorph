@@ -49,10 +49,6 @@ cdef class FX:
         def __get__(self): return self.thisptr.transient_substitution()
         def __set__(self, bool b): self.thisptr.transient_substitution(b)
 
-    property transposition:
-        def __get__(self): return self.thisptr.transposition()
-        def __set__(self, double n): self.thisptr.transposition(n)
-
     property harmonic_distortion:
         def __get__(self): return self.thisptr.harmonic_distortion()
         def __set__(self, double n): self.thisptr.harmonic_distortion(n)
@@ -81,6 +77,12 @@ cdef class FX:
     def clear_envelope(self):
         self.thisptr.clear_envelope()
 
+    def add_harmonic_transformation(self, HarmonicTransformation h not None):
+        self.thisptr.add_harmonic_transformation(h.thisptr)
+
+    def clear_harmonic_transformations(self):
+        self.thisptr.clear_harmonic_transformations()
+
     def process_frame(self, np.ndarray[dtype_t, ndim=1] audio):
         cdef np.ndarray[dtype_t, ndim=1] output = np.zeros(len(audio))
         self.thisptr.process_frame(len(audio), <double*> audio.data,
@@ -92,6 +94,28 @@ cdef class FX:
         self.thisptr.process(len(audio), <double*> audio.data,
                              len(output), <double*> output.data)
         return output
+
+
+cdef class HarmonicTransformation:
+    cdef c_HarmonicTransformation* thisptr
+
+
+cdef class Transposition(HarmonicTransformation):
+    def __cinit__(self, int transposition=0):
+        if self.thisptr:
+            del self.thisptr
+        self.thisptr = new c_Transposition(transposition)
+
+    def __dealloc__(self):
+        if self.thisptr:
+            del self.thisptr
+            self.thisptr = <c_Transposition*>0
+
+    property transposition:
+        def __get__(self):
+            return (<c_Transposition*>self.thisptr).transposition()
+        def __set__(self, double n):
+            (<c_Transposition*>self.thisptr).transposition(n)
 
 
 cdef class TimeScale(FX):
@@ -107,10 +131,12 @@ cdef class TimeScale(FX):
 
     property scale_factor:
         def __get__(self): return (<c_TimeScale*>self.thisptr).scale_factor()
-        def __set__(self, double n): (<c_TimeScale*>self.thisptr).scale_factor(n)
+        def __set__(self, double n):
+            (<c_TimeScale*>self.thisptr).scale_factor(n)
 
     def process(self, np.ndarray[dtype_t, ndim=1] audio):
-        cdef np.ndarray[dtype_t, ndim=1] output = np.zeros(len(audio) * self.scale_factor)
+        cdef np.ndarray[dtype_t, ndim=1] output = \
+            np.zeros(len(audio) * self.scale_factor)
         self.thisptr.process(len(audio), <double*> audio.data,
                              len(output), <double*> output.data)
         return output
@@ -123,6 +149,7 @@ cdef class SpectralEnvelope:
         if self.thisptr:
             del self.thisptr
         self.thisptr = new c_SpectralEnvelope(order, env_size)
+
     def __dealloc__(self):
         if self.thisptr:
             del self.thisptr

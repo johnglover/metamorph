@@ -4,14 +4,18 @@
 #include "notesegmentation/segmentation.h"
 #include "simpl/simpl.h"
 #include "spec_env.h"
+#include "transformations.h"
 
+#ifndef TWELFTH_ROOT_2
 #define TWELFTH_ROOT_2 1.0594630943592953
+#endif
 
 using namespace std;
 
 
 namespace metamorph
 {
+
 
 typedef double sample;
 
@@ -23,18 +27,19 @@ class FX {
         int _current_segment;
         int _previous_segment;
 
-        sample _harmonic_scale;
-        sample _residual_scale;
-        sample _transient_scale;
+        std::vector<HarmonicTransformation*> _harm_trans;
 
+        sample _harmonic_scale;
+        sample _harmonic_distortion;
+        sample _fundamental_frequency;
+
+        sample _residual_scale;
+
+        sample _transient_scale;
         bool _preserve_transients;
         bool _transient_substitution;
         int _new_transient_size;
         sample* _new_transient;
-
-        sample _harmonic_distortion;
-        sample _fundamental_frequency;
-        sample _transposition;
 
         sample* _fade_in;
         sample* _fade_out;
@@ -71,8 +76,6 @@ class FX {
 
         void create_envelope(simpl::Frame* frame);
         void apply_envelope(simpl::Frame* frame);
-        sample semitones_to_freq(sample semitones);
-        void transposition(simpl::Frame* frame);
         void harmonic_distortion(simpl::Frame* frame);
 
     public:
@@ -88,23 +91,14 @@ class FX {
         int max_partials();
         virtual void max_partials(int new_max_partials);
 
+        // -------------------------------------------------------------------
+        // Harmonic transformations
+
+        void add_harmonic_transformation(HarmonicTransformation* h);
+        void clear_harmonic_transformations();
+
         sample harmonic_scale();
         virtual void harmonic_scale(sample new_harmonic_scale);
-        sample residual_scale();
-        virtual void residual_scale(sample new_residual_scale);
-        sample transient_scale();
-        virtual void transient_scale(sample new_transient_scale);
-
-        bool preserve_transients();
-        void preserve_transients(bool preserve);
-
-        bool transient_substitution();
-        void transient_substitution(bool substitute);
-        void new_transient(int new_transient_size, sample* new_transient);
-        void clear_new_transient();
-
-        sample transposition();
-        void transposition(sample new_transposition);
 
         sample harmonic_distortion();
         void harmonic_distortion(sample new_harmonic_distortion);
@@ -118,6 +112,29 @@ class FX {
         void env_interp(sample new_env_interp);
         void apply_envelope(int env_size, sample* env);
         void clear_envelope();
+
+        // -------------------------------------------------------------------
+        // Noise transformations
+
+        sample residual_scale();
+        virtual void residual_scale(sample new_residual_scale);
+
+        // -------------------------------------------------------------------
+        // Transient transformations
+
+        sample transient_scale();
+        virtual void transient_scale(sample new_transient_scale);
+
+        bool preserve_transients();
+        void preserve_transients(bool preserve);
+
+        bool transient_substitution();
+        void transient_substitution(bool substitute);
+        void new_transient(int new_transient_size, sample* new_transient);
+        void clear_new_transient();
+
+        // -------------------------------------------------------------------
+        // Processing
 
         virtual void process_frame(int input_size, sample* input,
                                    int output_size, sample* output);

@@ -4,7 +4,7 @@ import scipy.io.wavfile as wav
 import metamorph
 
 if not len(sys.argv) == 4:
-    print 'Usage:', __file__, '<input wav file> <transposition ammount ' + \
+    print 'Usage:', __file__, '<input wav file> <transposition amount ' + \
           '(in semitones)> <output wav file>'
     sys.exit(1)
 
@@ -17,9 +17,12 @@ audio, sampling_rate = metamorph.read_wav(input_path)
 print 'Transposing by', transposition, 'semitones.'
 
 fx = metamorph.FX()
-fx.transposition = transposition
 fx.preserve_envelope = True
 fx.preserve_transients = False
+
+trans = metamorph.Transposition(transposition)
+fx.add_harmonic_transformation(trans)
+
 output = fx.process(audio)
 wav.write(output_path, sampling_rate, np.array(output * 32768, dtype=np.int16))
 

@@ -1,8 +1,15 @@
 cmake_minimum_required(VERSION 2.6)
 project(metamorph)
 
-set(source_files src/fx.cpp src/time_scale.cpp src/spec_env.cpp)
-set(include_files src/metamorph.h src/fx.h src/time_scale.h src/spec_env.h)
+set(source_files src/fx.cpp
+                 src/transformations.cpp
+                 src/time_scale.cpp
+                 src/spec_env.cpp)
+set(include_files src/metamorph.h
+                  src/fx.h
+                  src/transformations.h
+                  src/time_scale.h
+                  src/spec_env.h)
 set(libs m gsl fftw3 simpl modal notesegmentation)
 
 include_directories(src)
@@ -21,5 +28,5 @@ if(BUILD_TESTS)
     add_executable(test_fx ${test_src})
     target_link_libraries(test_fx ${libs})
 else()
-    message("-- Not building tests. To change run CMake with -D BUILD_TESTS=yes")
+    message("Not building tests. To change run CMake with -D BUILD_TESTS=yes")
 endif()

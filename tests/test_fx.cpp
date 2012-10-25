@@ -72,9 +72,12 @@ public:
         memset(output, 0, sizeof(sample) * num_samples);
 
         if(fx) delete fx;
+
         fx = new FX();
-        fx->transposition(4);
         fx->preserve_envelope(true);
+
+        Transposition* trans = new Transposition(4);
+        fx->add_harmonic_transformation(trans);
 
         fx->process(num_samples, input, num_samples, output);
 

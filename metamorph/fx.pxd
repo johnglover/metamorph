@@ -17,20 +17,10 @@ cdef extern from "../src/fx.h" namespace "metamorph":
         void hop_size(int new_hop_size)
         int max_partials()
         void max_partials(int new_max_partials)
+        void add_harmonic_transformation(c_HarmonicTransformation* h)
+        void clear_harmonic_transformations()
         double harmonic_scale()
         void harmonic_scale(double new_harmonic_scale)
-        double residual_scale()
-        void residual_scale(double new_residual_scale)
-        double transient_scale()
-        bool preserve_transients()
-        void preserve_transients(bool preserve)
-        bool transient_substitution()
-        void transient_substitution(bool substitute)
-        void new_transient(int new_transient_size, double* new_transient)
-        void clear_new_transient()
-        void transient_scale(double new_transient_scale)
-        double transposition()
-        void transposition(double new_transposition)
         double harmonic_distortion()
         void harmonic_distortion(double new_harmonic_distortion)
         double fundamental_frequency()
@@ -41,10 +31,32 @@ cdef extern from "../src/fx.h" namespace "metamorph":
         void env_interp(double new_env_interp)
         void apply_envelope(int env_size, double* env)
         void clear_envelope()
+        double residual_scale()
+        void residual_scale(double new_residual_scale)
+        double transient_scale()
+        bool preserve_transients()
+        void preserve_transients(bool preserve)
+        bool transient_substitution()
+        void transient_substitution(bool substitute)
+        void new_transient(int new_transient_size, double* new_transient)
+        void clear_new_transient()
+        void transient_scale(double new_transient_scale)
         void process_frame(int input_size, double* input,
                            int output_size, double* output)
         void process(long input_size, double* input,
                      long output_size, double* output)
+
+
+cdef extern from "../src/transformations.h" namespace "metamorph":
+    cdef cppclass c_HarmonicTransformation "metamorph::HarmonicTransformation":
+        c_HarmonicTransformation()
+
+    cdef cppclass c_Transposition \
+        "metamorph::Transposition"(c_HarmonicTransformation):
+        c_Transposition()
+        c_Transposition(double new_transposition)
+        double transposition()
+        void transposition(double new_transposition)
 
 
 cdef extern from "../src/time_scale.h" namespace "metamorph":

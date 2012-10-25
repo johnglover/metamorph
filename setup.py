@@ -25,6 +25,7 @@ metamorph = Extension(
     'metamorph.fx',
     sources=['metamorph/fx.pyx',
              'src/fx.cpp',
+             'src/transformations.cpp',
              'src/time_scale.cpp',
              'src/spec_env.cpp'],
     include_dirs=['src'] + include_dirs,

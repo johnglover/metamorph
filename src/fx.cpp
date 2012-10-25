@@ -17,7 +17,6 @@ FX::FX() {
 
     _harmonic_distortion = -1.f;
     _fundamental_frequency = 0.f;
-    _transposition = 0.f;
 
     _fade_in = NULL;
     _fade_out = NULL;
@@ -225,31 +224,37 @@ sample FX::f0() {
 }
 
 // ---------------------------------------------------------------------------
-// Transposition
+// Harmonic Transformations
 // ---------------------------------------------------------------------------
-sample FX::transposition() {
-    return _transposition;
+void FX::add_harmonic_transformation(HarmonicTransformation* h) {
+    _harm_trans.push_back(h);
 }
 
-void FX::transposition(sample new_transposition) {
-    _transposition = new_transposition;
+void FX::clear_harmonic_transformations() {
+    _harm_trans.clear();
 }
 
-sample FX::semitones_to_freq(sample semitones) {
-    return powf(TWELFTH_ROOT_2, semitones);
+sample FX::harmonic_distortion() {
+    return  _harmonic_distortion;
 }
 
-void FX::transposition(simpl::Frame* frame) {
-    if(_transposition != 0) {
-        for(int i = 0; i < frame->num_partials(); i++) {
-            frame->partial(i)->frequency *= semitones_to_freq(_transposition);
-        }
+void FX::harmonic_distortion(sample new_harmonic_distortion) {
+    _harmonic_distortion = new_harmonic_distortion;
+}
+
+void FX::harmonic_distortion(simpl::Frame* frame) {
+    if(_harmonic_distortion < 0) {
+        return;
+    }
+
+    sample f = f0();
+    for(int i = 0; i < frame->num_partials(); i++) {
+        frame->partial(i)->frequency =
+            (_harmonic_distortion * frame->partial(i)->frequency) +
+            ((1 - _harmonic_distortion) * (f * (i + 1)));
     }
 }
 
-// ---------------------------------------------------------------------------
-// Spectral Envelope
-// ---------------------------------------------------------------------------
 bool FX::preserve_envelope() {
     return _create_env && _apply_env;
 }
@@ -389,30 +394,6 @@ void FX::clear_envelope() {
 }
 
 // ---------------------------------------------------------------------------
-// Harmonic Distortion
-// ---------------------------------------------------------------------------
-sample FX::harmonic_distortion() {
-    return  _harmonic_distortion;
-}
-
-void FX::harmonic_distortion(sample new_harmonic_distortion) {
-    _harmonic_distortion = new_harmonic_distortion;
-}
-
-void FX::harmonic_distortion(simpl::Frame* frame) {
-    if(_harmonic_distortion < 0) {
-        return;
-    }
-
-    sample f = f0();
-    for(int i = 0; i < frame->num_partials(); i++) {
-        frame->partial(i)->frequency =
-            (_harmonic_distortion * frame->partial(i)->frequency) +
-            ((1 - _harmonic_distortion) * (f * (i + 1)));
-    }
-}
-
-// ---------------------------------------------------------------------------
 // Transient Processing
 // ---------------------------------------------------------------------------
 bool FX::preserve_transients() {
@@ -447,7 +428,7 @@ void FX::clear_new_transient() {
 }
 
 // ---------------------------------------------------------------------------
-// Process Frame
+// Processing
 // ---------------------------------------------------------------------------
 void FX::process_frame(int input_size, sample* input,
                        int output_size, sample* output) {
@@ -473,7 +454,7 @@ void FX::process_frame(int input_size, sample* input,
                sizeof(sample) * _hop_size);
     }
 
-    // reset any processes that rely on the current note segment
+    // if at onset, reset any processes that rely on the current note segment
     if(_current_segment == ONSET) {
         reset();
     }
@@ -492,7 +473,12 @@ void FX::process_frame(int input_size, sample* input,
     }
     else {
         create_envelope(_frame);
-        transposition(_frame);
+
+        // perform all harmonic transformations
+        for(int i = 0; i < _harm_trans.size(); i++) {
+            _harm_trans[i]->process_frame(_frame);
+        }
+
         harmonic_distortion(_frame);
         apply_envelope(_frame);
 
@@ -528,9 +514,6 @@ void FX::process_frame(int input_size, sample* input,
     }
 }
 
-// ---------------------------------------------------------------------------
-// Process
-// ---------------------------------------------------------------------------
 void FX::process(long input_size, sample* input,
                  long output_size, sample* output) {
     for(long i = 0; i < output_size - _hop_size; i += _hop_size) {
