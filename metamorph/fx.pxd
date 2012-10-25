@@ -29,8 +29,8 @@ cdef extern from "../src/fx.h" namespace "metamorph":
         void apply_envelope(int env_size, double* env)
         void clear_envelope()
 
-        void add_noise_transformation(c_NoiseTransformation* h)
-        void clear_noise_transformations()
+        void add_residual_transformation(c_ResidualTransformation* h)
+        void clear_residual_transformations()
         double residual_scale()
         void residual_scale(double new_residual_scale)
 
@@ -55,8 +55,8 @@ cdef extern from "../src/transformations.h" namespace "metamorph":
     cdef cppclass c_HarmonicTransformation "metamorph::HarmonicTransformation":
         c_HarmonicTransformation()
 
-    cdef cppclass c_NoiseTransformation "metamorph::NoiseTransformation":
-        c_NoiseTransformation()
+    cdef cppclass c_ResidualTransformation "metamorph::ResidualTransformation":
+        c_ResidualTransformation()
 
     cdef cppclass c_TransientTransformation \
         "metamorph::TransientTransformation":

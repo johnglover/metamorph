@@ -75,11 +75,11 @@ cdef class FX:
     def clear_harmonic_transformations(self):
         self.thisptr.clear_harmonic_transformations()
 
-    def add_noise_transformation(self, NoiseTransformation t not None):
-        self.thisptr.add_noise_transformation(t.thisptr)
+    def add_residual_transformation(self, ResidualTransformation t not None):
+        self.thisptr.add_residual_transformation(t.thisptr)
 
-    def clear_noise_transformations(self):
-        self.thisptr.clear_noise_transformations()
+    def clear_residual_transformations(self):
+        self.thisptr.clear_residual_transformations()
 
     def add_transient_transformation(self, TransientTransformation t not None):
         self.thisptr.add_transient_transformation(t.thisptr)
@@ -110,8 +110,8 @@ cdef class HarmonicTransformation:
     cdef c_HarmonicTransformation* thisptr
 
 
-cdef class NoiseTransformation:
-    cdef c_NoiseTransformation* thisptr
+cdef class ResidualTransformation:
+    cdef c_ResidualTransformation* thisptr
 
 
 cdef class TransientTransformation:

@@ -345,14 +345,14 @@ void FX::clear_envelope() {
 }
 
 // ---------------------------------------------------------------------------
-// Noise Transformations
+// Residual Transformations
 // ---------------------------------------------------------------------------
-void FX::add_noise_transformation(NoiseTransformation* trans) {
-    _noise_trans.push_back(trans);
+void FX::add_residual_transformation(ResidualTransformation* trans) {
+    _residual_trans.push_back(trans);
 }
 
-void FX::clear_noise_transformations() {
-    _noise_trans.clear();
+void FX::clear_residual_transformations() {
+    _residual_trans.clear();
 }
 
 sample FX::residual_scale() {
@@ -479,10 +479,10 @@ void FX::process_frame(int input_size, sample* input,
             _synth->synth_frame(_frame);
         }
 
-        // perform all noise transformations
+        // perform all residual transformations
         if(_residual_scale > 0) {
-            for(int i = 0; i < _noise_trans.size(); i++) {
-                _noise_trans[i]->process_frame(_residual_frame);
+            for(int i = 0; i < _residual_trans.size(); i++) {
+                _residual_trans[i]->process_frame(_residual_frame);
             }
 
             _residual->synth_frame(_residual_frame);

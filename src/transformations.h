@@ -25,7 +25,7 @@ class Transformation {
         virtual void process_frame(simpl::Frame* frame) = 0;
 };
 class HarmonicTransformation : public Transformation {};
-class NoiseTransformation : public Transformation {};
+class ResidualTransformation : public Transformation {};
 
 
 class TransientTransformation {
