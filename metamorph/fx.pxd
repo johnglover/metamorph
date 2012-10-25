@@ -21,10 +21,6 @@ cdef extern from "../src/fx.h" namespace "metamorph":
         void clear_harmonic_transformations()
         double harmonic_scale()
         void harmonic_scale(double new_harmonic_scale)
-        double harmonic_distortion()
-        void harmonic_distortion(double new_harmonic_distortion)
-        double fundamental_frequency()
-        void fundamental_frequency(double new_fundamental_frequency)
         bool preserve_envelope()
         void preserve_envelope(bool preserve)
         double env_interp()
@@ -58,6 +54,15 @@ cdef extern from "../src/transformations.h" namespace "metamorph":
         double transposition()
         void transposition(double new_transposition)
 
+    cdef cppclass c_HarmonicDistortion \
+        "metamorph::HarmonicDistortion"(c_HarmonicTransformation):
+        c_HarmonicDistortion()
+        c_HarmonicDistortion(double new_harmonic_distortion,
+                             double new_fundamental)
+        double harmonic_distortion()
+        void harmonic_distortion(double new_harmonic_distortion)
+        double fundamental_frequency()
+        void fundamental_frequency(double new_fundamental_frequency)
 
 cdef extern from "../src/time_scale.h" namespace "metamorph":
     cdef cppclass c_TimeScale "metamorph::TimeScale"(c_FX):

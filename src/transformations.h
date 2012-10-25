@@ -33,6 +33,24 @@ class Transposition : public HarmonicTransformation {
         void process_frame(simpl::Frame* frame);
 };
 
+
+class HarmonicDistortion : public HarmonicTransformation {
+    private:
+        sample _harmonic_distortion;
+        sample _fundamental_frequency;
+        int _num_harmonics;
+
+    public:
+        HarmonicDistortion();
+        HarmonicDistortion(sample new_harmonic_distortion,
+                           sample new_fundamental);
+        sample harmonic_distortion();
+        void harmonic_distortion(sample new_harmonic_distortion);
+        sample fundamental_frequency();
+        void fundamental_frequency(sample new_fundamental);
+        void process_frame(simpl::Frame* frame);
+};
+
 } // end of namespace metamorph
 
 

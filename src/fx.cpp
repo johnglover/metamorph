@@ -15,9 +15,6 @@ FX::FX() {
 
     _preserve_transients = true;
 
-    _harmonic_distortion = -1.f;
-    _fundamental_frequency = 0.f;
-
     _fade_in = NULL;
     _fade_out = NULL;
 
@@ -206,23 +203,6 @@ void FX::transient_scale(sample new_transient_scale) {
     _transient_scale = new_transient_scale;
 }
 
-sample FX::fundamental_frequency() {
-    return _fundamental_frequency;
-}
-
-void FX::fundamental_frequency(sample new_fundamental_frequency) {
-    _fundamental_frequency = new_fundamental_frequency;
-}
-
-sample FX::f0() {
-    if(_fundamental_frequency > 0) {
-        return _fundamental_frequency;
-    }
-
-    // TODO: estimate fundamental frequency if not set
-    return 440.f;
-}
-
 // ---------------------------------------------------------------------------
 // Harmonic Transformations
 // ---------------------------------------------------------------------------
@@ -232,27 +212,6 @@ void FX::add_harmonic_transformation(HarmonicTransformation* h) {
 
 void FX::clear_harmonic_transformations() {
     _harm_trans.clear();
-}
-
-sample FX::harmonic_distortion() {
-    return  _harmonic_distortion;
-}
-
-void FX::harmonic_distortion(sample new_harmonic_distortion) {
-    _harmonic_distortion = new_harmonic_distortion;
-}
-
-void FX::harmonic_distortion(simpl::Frame* frame) {
-    if(_harmonic_distortion < 0) {
-        return;
-    }
-
-    sample f = f0();
-    for(int i = 0; i < frame->num_partials(); i++) {
-        frame->partial(i)->frequency =
-            (_harmonic_distortion * frame->partial(i)->frequency) +
-            ((1 - _harmonic_distortion) * (f * (i + 1)));
-    }
 }
 
 bool FX::preserve_envelope() {
@@ -394,7 +353,7 @@ void FX::clear_envelope() {
 }
 
 // ---------------------------------------------------------------------------
-// Transient Processing
+// Transient Processing and Transformations
 // ---------------------------------------------------------------------------
 bool FX::preserve_transients() {
     return _preserve_transients;
@@ -479,9 +438,7 @@ void FX::process_frame(int input_size, sample* input,
             _harm_trans[i]->process_frame(_frame);
         }
 
-        harmonic_distortion(_frame);
         apply_envelope(_frame);
-
         _synth->synth_frame(_frame);
 
         if(_residual_scale > 0) {

@@ -49,14 +49,6 @@ cdef class FX:
         def __get__(self): return self.thisptr.transient_substitution()
         def __set__(self, bool b): self.thisptr.transient_substitution(b)
 
-    property harmonic_distortion:
-        def __get__(self): return self.thisptr.harmonic_distortion()
-        def __set__(self, double n): self.thisptr.harmonic_distortion(n)
-
-    property fundamental_frequency:
-        def __get__(self): return self.thisptr.fundamental_frequency()
-        def __set__(self, double n): self.thisptr.fundamental_frequency(n)
-
     property preserve_envelope:
         def __get__(self): return self.thisptr.preserve_envelope()
         def __set__(self, bool b): self.thisptr.preserve_envelope(b)
@@ -116,6 +108,32 @@ cdef class Transposition(HarmonicTransformation):
             return (<c_Transposition*>self.thisptr).transposition()
         def __set__(self, double n):
             (<c_Transposition*>self.thisptr).transposition(n)
+
+
+cdef class HarmonicDistortion(HarmonicTransformation):
+    def __cinit__(self, double harmonic_distortion=1, double fundamental=440):
+        if self.thisptr:
+            del self.thisptr
+        self.thisptr = new c_HarmonicDistortion(harmonic_distortion,
+                                                fundamental)
+
+    def __dealloc__(self):
+        if self.thisptr:
+            del self.thisptr
+            self.thisptr = <c_HarmonicDistortion*>0
+
+    property harmonic_distortion:
+        def __get__(self):
+            return (<c_HarmonicDistortion*>self.thisptr).harmonic_distortion()
+        def __set__(self, double n):
+            (<c_HarmonicDistortion*>self.thisptr).harmonic_distortion(n)
+
+    property fundamental_frequency:
+        def __get__(self):
+            return (<c_HarmonicDistortion*>self.thisptr)\
+                .fundamental_frequency()
+        def __set__(self, double n):
+            (<c_HarmonicDistortion*>self.thisptr).fundamental_frequency(n)
 
 
 cdef class TimeScale(FX):

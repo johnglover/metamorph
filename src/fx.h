@@ -30,12 +30,9 @@ class FX {
         std::vector<HarmonicTransformation*> _harm_trans;
 
         sample _harmonic_scale;
-        sample _harmonic_distortion;
-        sample _fundamental_frequency;
-
         sample _residual_scale;
-
         sample _transient_scale;
+
         bool _preserve_transients;
         bool _transient_substitution;
         int _new_transient_size;
@@ -72,11 +69,9 @@ class FX {
 
         void reset_fade_windows();
         void reset_envelope_data();
-        virtual sample f0();
 
         void create_envelope(simpl::Frame* frame);
         void apply_envelope(simpl::Frame* frame);
-        void harmonic_distortion(simpl::Frame* frame);
 
     public:
         FX();
@@ -99,12 +94,6 @@ class FX {
 
         sample harmonic_scale();
         virtual void harmonic_scale(sample new_harmonic_scale);
-
-        sample harmonic_distortion();
-        void harmonic_distortion(sample new_harmonic_distortion);
-
-        sample fundamental_frequency();
-        virtual void fundamental_frequency(sample new_fundamental_frequency);
 
         bool preserve_envelope();
         void preserve_envelope(bool preserve);
