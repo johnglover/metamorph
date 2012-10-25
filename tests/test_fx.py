@@ -41,12 +41,21 @@ class TestFX(object):
         assert len(output) == len(self.audio)
         assert np.max(output) > 0
 
-    def test_harmonic_distortion(self):
+
+class TestHarmonicDistortion(object):
+    @classmethod
+    def setup_class(cls):
+        cls.audio = metamorph.read_wav(audio_path)[0]
+        cls.audio = cls.audio[len(cls.audio) / 2:(len(cls.audio) / 2) + 4096]
+
+    def test_basic(self):
         fx = metamorph.FX()
-        fx.fundamental_frequency = 440
-        fx.harmonic_distortion = 0
         fx.residual_scale = 0
         fx.transient_scale = 0
+
+        hdist = metamorph.HarmonicDistortion(0, 440)
+        fx.add_harmonic_transformation(hdist)
+
         output = fx.process(self.audio)
         assert len(output) == len(self.audio)
         assert np.max(output) > 0
