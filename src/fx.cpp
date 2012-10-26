@@ -246,6 +246,10 @@ void FX::env_interp(sample new_env_interp) {
     _env_interp = new_env_interp;
 }
 
+int FX::env_size() {
+    return _env_size;
+}
+
 void FX::create_envelope(simpl::Frame* frame) {
     if(!_create_env) {
         return;

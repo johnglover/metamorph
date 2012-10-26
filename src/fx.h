@@ -108,6 +108,7 @@ class FX {
         void preserve_envelope(bool preserve);
         sample env_interp();
         void env_interp(sample new_env_interp);
+        int env_size();
         void apply_envelope(int env_size, sample* env);
         bool apply_envelope();
         void apply_envelope(bool new_apply_env);

@@ -26,6 +26,7 @@ cdef extern from "../src/fx.h" namespace "metamorph":
         void preserve_envelope(bool preserve)
         double env_interp()
         void env_interp(double new_env_interp)
+        int env_size()
         void apply_envelope(int env_size, double* env)
         bool apply_envelope()
         void apply_envelope(bool new_apply_env)

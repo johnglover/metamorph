@@ -57,6 +57,10 @@ cdef class FX:
         def __get__(self): return self.thisptr.env_interp()
         def __set__(self, double n): self.thisptr.env_interp(n)
 
+    property env_size:
+        def __get__(self): return self.thisptr.env_size()
+        def __set__(self, int n): raise Exception('NotImplemented')
+
     property apply_envelope:
         def __get__(self): return self.thisptr.apply_envelope()
         def __set__(self, bool b): self.thisptr.apply_envelope(b)
