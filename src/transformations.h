@@ -24,8 +24,19 @@ class Transformation {
     public:
         virtual void process_frame(simpl::Frame* frame) = 0;
 };
+
+
 class HarmonicTransformation : public Transformation {};
+
+
 class ResidualTransformation : public Transformation {};
+
+
+class SpecEnvTransformation {
+    public:
+        virtual void process_frame(simpl::Frame* frame,
+                                   std::vector<sample>& new_env) = 0;
+};
 
 
 class TransientTransformation {

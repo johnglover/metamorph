@@ -57,6 +57,7 @@ FX::FX() {
 
     _transient_substitution = false;
     _new_transient_size = 0;
+    _transient_sample = 0;
     _new_transient = NULL;
 
     reset_fade_windows();
@@ -82,6 +83,7 @@ FX::~FX() {
 
 void FX::reset() {
     _ns.reset();
+    _transient_sample = 0;
 }
 
 void FX::reset_fade_windows() {
@@ -197,6 +199,14 @@ void FX::clear_harmonic_transformations() {
     _harm_trans.clear();
 }
 
+void FX::add_specenv_transformation(SpecEnvTransformation* trans) {
+    _specenv_trans.push_back(trans);
+}
+
+void FX::clear_specenv_transformations() {
+    _specenv_trans.clear();
+}
+
 sample FX::harmonic_scale() {
     return _harmonic_scale;
 }
@@ -263,6 +273,13 @@ void FX::apply_envelope(simpl::Frame* frame) {
         return;
     }
 
+    if(_env.size() != _new_env.size()) {
+        printf("Error: could not apply envelope as the new envelope "
+               "size (%d) does not match the current envelope "
+               "size (%d).\n", (int)_env.size(), (int)_new_env.size());
+        return;
+    }
+
     if(_env_interp > 0) {
         sample amp1, amp2;
         for(int i = 0; i < _env.size(); i++) {
@@ -312,7 +329,8 @@ void FX::apply_envelope(simpl::Frame* frame) {
         }
 
         bin = (int)(frame->partial(i)->frequency / _bin_size);
-        bin_frac = (frame->partial(i)->frequency / (sample)_bin_size) - (sample)bin;
+        bin_frac = (frame->partial(i)->frequency / (sample)_bin_size) -
+                   (sample)bin;
 
         if(bin < _env.size() - 1) {
             frame->partial(i)->amplitude =
@@ -337,6 +355,14 @@ void FX::apply_envelope(int env_size, sample* env) {
 
     _apply_env = true;
     _new_env.assign(env, env + env_size);
+}
+
+bool FX::apply_envelope() {
+    return _apply_env;
+}
+
+void FX::apply_envelope(bool new_apply_env) {
+    _apply_env = new_apply_env;
 }
 
 void FX::clear_envelope() {
@@ -462,6 +488,18 @@ void FX::process_frame(int input_size, sample* input,
             _transient_trans[i]->process_frame(_input);
         }
 
+        if(_transient_substitution) {
+            for(int i = 0; i < _hop_size; i++) {
+                if(_transient_sample < _new_transient_size) {
+                    _input[i] = _new_transient[i];
+                    _transient_sample++;
+                }
+                else {
+                    break;
+                }
+            }
+        }
+
         for(int i = 0; i < _hop_size; i++) {
             output[i] += _input[i] * _transient_scale;
         }
@@ -473,6 +511,10 @@ void FX::process_frame(int input_size, sample* input,
 
             for(int i = 0; i < _harm_trans.size(); i++) {
                 _harm_trans[i]->process_frame(_frame);
+            }
+
+            for(int i = 0; i < _specenv_trans.size(); i++) {
+                _specenv_trans[i]->process_frame(_frame, _new_env);
             }
 
             apply_envelope(_frame);
@@ -493,6 +535,18 @@ void FX::process_frame(int input_size, sample* input,
             // perform all transient transformations
             for(int i = 0; i < _transient_trans.size(); i++) {
                 _transient_trans[i]->process_frame(_input);
+            }
+
+            if(_transient_substitution) {
+                for(int i = 0; i < _hop_size; i++) {
+                    if(_transient_sample < _new_transient_size) {
+                        _input[i] = _new_transient[i];
+                        _transient_sample++;
+                    }
+                    else {
+                        break;
+                    }
+                }
             }
 
             // end of transient section, crossfade

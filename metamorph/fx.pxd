@@ -27,6 +27,8 @@ cdef extern from "../src/fx.h" namespace "metamorph":
         double env_interp()
         void env_interp(double new_env_interp)
         void apply_envelope(int env_size, double* env)
+        bool apply_envelope()
+        void apply_envelope(bool new_apply_env)
         void clear_envelope()
 
         void add_residual_transformation(c_ResidualTransformation* h)
@@ -54,6 +56,9 @@ cdef extern from "../src/fx.h" namespace "metamorph":
 cdef extern from "../src/transformations.h" namespace "metamorph":
     cdef cppclass c_HarmonicTransformation "metamorph::HarmonicTransformation":
         c_HarmonicTransformation()
+
+    cdef cppclass c_SpecEnvTransformation "metamorph::SpecEnvTransformation":
+        c_SpecEnvTransformation()
 
     cdef cppclass c_ResidualTransformation "metamorph::ResidualTransformation":
         c_ResidualTransformation()

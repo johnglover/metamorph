@@ -57,13 +57,17 @@ cdef class FX:
         def __get__(self): return self.thisptr.env_interp()
         def __set__(self, double n): self.thisptr.env_interp(n)
 
+    property apply_envelope:
+        def __get__(self): return self.thisptr.apply_envelope()
+        def __set__(self, bool b): self.thisptr.apply_envelope(b)
+
     def new_transient(self, np.ndarray[dtype_t, ndim=1] transient):
         self.thisptr.new_transient(len(transient), <double*> transient.data)
 
     def clear_new_transient(self):
         self.thisptr.clear_new_transient()
 
-    def apply_envelope(self, np.ndarray[dtype_t, ndim=1] env):
+    def new_envelope(self, np.ndarray[dtype_t, ndim=1] env):
         self.thisptr.apply_envelope(len(env), <double*> env.data)
 
     def clear_envelope(self):
@@ -108,6 +112,10 @@ cdef class FX:
 
 cdef class HarmonicTransformation:
     cdef c_HarmonicTransformation* thisptr
+
+
+cdef class SpecEnvTransformation:
+    cdef c_SpecEnvTransformation* thisptr
 
 
 cdef class ResidualTransformation:

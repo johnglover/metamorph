@@ -28,6 +28,7 @@ class FX {
         int _previous_segment;
 
         std::vector<HarmonicTransformation*> _harm_trans;
+        std::vector<SpecEnvTransformation*> _specenv_trans;
         std::vector<ResidualTransformation*> _residual_trans;
         std::vector<TransientTransformation*> _transient_trans;
 
@@ -38,6 +39,7 @@ class FX {
         bool _preserve_transients;
         bool _transient_substitution;
         int _new_transient_size;
+        int _transient_sample;
         sample* _new_transient;
 
         std::vector<sample> _input;
@@ -96,6 +98,8 @@ class FX {
 
         void add_harmonic_transformation(HarmonicTransformation* trans);
         void clear_harmonic_transformations();
+        void add_specenv_transformation(SpecEnvTransformation* trans);
+        void clear_specenv_transformations();
 
         sample harmonic_scale();
         virtual void harmonic_scale(sample new_harmonic_scale);
@@ -105,6 +109,8 @@ class FX {
         sample env_interp();
         void env_interp(sample new_env_interp);
         void apply_envelope(int env_size, sample* env);
+        bool apply_envelope();
+        void apply_envelope(bool new_apply_env);
         void clear_envelope();
 
         // -------------------------------------------------------------------
