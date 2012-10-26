@@ -94,6 +94,7 @@ FX::~FX() {
 
 void FX::reset() {
     _ns.reset();
+    _pt->reset();
     _transient_sample = 0;
 }
 
