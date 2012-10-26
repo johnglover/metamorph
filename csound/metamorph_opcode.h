@@ -11,14 +11,21 @@ typedef struct Mm Mm;
 
 typedef struct {
     // structure holding csound global data (esr, ksmps, etc.)
-    OPDS h;  	
+    OPDS h;
 
     // output
     MYFLT *output;
 
     // parameters
-    MYFLT *input, *harmonic_scale, *residual_scale, *transient_scale,
-          *transposition_factor, *preserve_envelope;
+    MYFLT *input,
+          *harmonic_scale,
+          *residual_scale,
+          *transient_scale,
+          *preserve_transients,
+          *transposition_factor,
+          *preserve_envelope,
+          *harm_dist,
+          *fundamental;
 
     // opcode internal data
     Mm *data;
