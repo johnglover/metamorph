@@ -106,8 +106,6 @@ void FX::reset_fade_windows() {
 
     sample step = 1.f / _fade_duration;
     for(int i = 0; i < _fade_duration; i++) {
-        // _fade_in[i] = i * step;
-        // _fade_out[i] = (_fade_duration - i) * step;
         sample t = (float)i / _fade_duration;
         _fade_in[i] = pow(0.5 - (0.5 * cos(M_PI * t)), 0.5);
         _fade_out[i] = pow(0.5 + (0.5 * cos(M_PI * t)), 0.5);
