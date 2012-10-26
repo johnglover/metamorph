@@ -79,6 +79,17 @@ FX::~FX() {
     if(_env_frame) delete _env_frame;
     if(_env_pt) delete _env_pt;
     if(_spec_env) delete _spec_env;
+
+    _harm_trans.clear();
+    _specenv_trans.clear();
+    _residual_trans.clear();
+    _transient_trans.clear();
+    _input.clear();
+    _env.clear();
+    _new_env.clear();
+    _env_freqs.clear();
+    _env_mags.clear();
+    _partial_lifetimes.clear();
 }
 
 void FX::reset() {
