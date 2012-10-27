@@ -30,19 +30,6 @@ extern "C" int mm_cleanup(CSOUND *, void * p);
 extern "C" int mm_setup(CSOUND *csound, MM* p) {
     p->data = new Mm(csound, p);
 
-    p->data->fx->harmonic_scale((*p->harmonic_scale));
-    p->data->fx->residual_scale((*p->residual_scale));
-    p->data->fx->transient_scale((*p->transient_scale));
-
-    if(*p->preserve_transients == 1) {
-        p->data->fx->preserve_transients(true);
-    }
-    else {
-        p->data->fx->preserve_transients(false);
-    }
-
-    p->data->transpose->transposition(*p->transposition_factor);
-
     csound->RegisterDeinitCallback(
         csound, p, (int (*)(CSOUND*, void*))mm_cleanup
     );
@@ -56,8 +43,20 @@ extern "C" int mm(CSOUND *csound, MM* p) {
 
     memset(output, 0, sizeof(MYFLT) * nsmps);
 
-    p->data->fx->process_frame(nsmps, input, nsmps, output);
+    p->data->fx->harmonic_scale((*p->harmonic_scale));
+    p->data->fx->residual_scale((*p->residual_scale));
+    p->data->fx->transient_scale((*p->transient_scale));
 
+    if(*p->preserve_transients == 1) {
+        p->data->fx->preserve_transients(true);
+    }
+    else {
+        p->data->fx->preserve_transients(false);
+    }
+
+    p->data->transpose->transposition(*p->transposition_factor);
+
+    p->data->fx->process_frame(nsmps, input, nsmps, output);
     return OK;
 }
 
