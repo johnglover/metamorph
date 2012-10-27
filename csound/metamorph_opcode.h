@@ -24,8 +24,8 @@ typedef struct {
           *preserve_transients,
           *transposition_factor,
           *preserve_envelope,
-          *harm_dist,
-          *fundamental;
+          *harmonic_distortion,
+          *fundamental_frequency;
 
     // opcode internal data
     Mm *data;
