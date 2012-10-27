@@ -8,10 +8,12 @@ using namespace metamorph;
 // ---------------------------------------------------------------------------
 Transposition::Transposition() {
     _transposition = 0;
+    _transposition_hz = 0;
 }
 
 Transposition::Transposition(sample new_transposition) {
     _transposition = new_transposition;
+    _transposition_hz = semitones_to_freq(_transposition);
 }
 
 sample Transposition::transposition() {
@@ -20,6 +22,7 @@ sample Transposition::transposition() {
 
 void Transposition::transposition(sample new_transposition) {
     _transposition = new_transposition;
+    _transposition_hz = semitones_to_freq(_transposition);
 }
 
 sample Transposition::semitones_to_freq(sample semitones) {
@@ -29,7 +32,7 @@ sample Transposition::semitones_to_freq(sample semitones) {
 void Transposition::process_frame(simpl::Frame* frame) {
     if(_transposition != 0) {
         for(int i = 0; i < frame->num_partials(); i++) {
-            frame->partial(i)->frequency *= semitones_to_freq(_transposition);
+            frame->partial(i)->frequency *= _transposition_hz;
         }
     }
 }

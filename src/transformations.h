@@ -35,7 +35,7 @@ class ResidualTransformation : public Transformation {};
 class SpecEnvTransformation {
     public:
         virtual void process_frame(simpl::Frame* frame,
-                                   std::vector<sample>& new_env) = 0;
+                                   std::vector<sample>& env) = 0;
 };
 
 
@@ -48,6 +48,7 @@ class TransientTransformation {
 class Transposition : public HarmonicTransformation {
     private:
         sample _transposition;
+        sample _transposition_hz;
         sample semitones_to_freq(sample semitones);
 
     public:
