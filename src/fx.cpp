@@ -231,10 +231,7 @@ void FX::max_partials(int new_max_partials) {
     reset_envelope_data();
 }
 
-// ---------------------------------------------------------------------------
-// Harmonic Transformations
-// ---------------------------------------------------------------------------
-void FX::add_harmonic_transformation(HarmonicTransformation* trans) {
+void FX::add_transformation(HarmonicTransformation* trans) {
     _harm_trans.push_back(trans);
 }
 
@@ -242,7 +239,7 @@ void FX::clear_harmonic_transformations() {
     _harm_trans.clear();
 }
 
-void FX::add_specenv_transformation(SpecEnvTransformation* trans) {
+void FX::add_transformation(SpecEnvTransformation* trans) {
     _specenv_trans.push_back(trans);
 }
 
@@ -250,6 +247,25 @@ void FX::clear_specenv_transformations() {
     _specenv_trans.clear();
 }
 
+void FX::add_transformation(ResidualTransformation* trans) {
+    _residual_trans.push_back(trans);
+}
+
+void FX::clear_residual_transformations() {
+    _residual_trans.clear();
+}
+
+void FX::add_transformation(TransientTransformation* trans) {
+    _transient_trans.push_back(trans);
+}
+
+void FX::clear_transient_transformations() {
+    _transient_trans.clear();
+}
+
+// ---------------------------------------------------------------------------
+// Harmonic Transformations
+// ---------------------------------------------------------------------------
 sample FX::harmonic_scale() {
     return _harmonic_scale;
 }
@@ -422,14 +438,6 @@ void FX::clear_envelope() {
 // ---------------------------------------------------------------------------
 // Residual Transformations
 // ---------------------------------------------------------------------------
-void FX::add_residual_transformation(ResidualTransformation* trans) {
-    _residual_trans.push_back(trans);
-}
-
-void FX::clear_residual_transformations() {
-    _residual_trans.clear();
-}
-
 sample FX::residual_scale() {
     return _residual_scale;
 }
@@ -441,14 +449,6 @@ void FX::residual_scale(sample new_residual_scale) {
 // ---------------------------------------------------------------------------
 // Transient Processing and Transformations
 // ---------------------------------------------------------------------------
-void FX::add_transient_transformation(TransientTransformation* trans) {
-    _transient_trans.push_back(trans);
-}
-
-void FX::clear_transient_transformations() {
-    _transient_trans.clear();
-}
-
 sample FX::transient_scale() {
     return _transient_scale;
 }

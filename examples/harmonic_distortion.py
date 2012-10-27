@@ -21,7 +21,7 @@ fx = metamorph.FX()
 fx.residual_scale = 0
 
 hdist = metamorph.HarmonicDistortion(0, fundamental_frequency)
-fx.add_harmonic_transformation(hdist)
+fx.add_transformation(hdist)
 
 output = fx.process(audio)
 wav.write(output_path, sampling_rate, np.array(output * 32768, dtype=np.int16))

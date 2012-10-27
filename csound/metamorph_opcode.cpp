@@ -17,7 +17,7 @@ Mm::Mm(CSOUND *csound, MM* params) {
     fx->hop_size(csound->ksmps);
 
     transpose = new Transposition();
-    fx->add_harmonic_transformation(transpose);
+    fx->add_transformation(transpose);
 }
 
 Mm::~Mm() {

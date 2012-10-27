@@ -77,7 +77,7 @@ public:
         fx->preserve_envelope(true);
 
         Transposition* trans = new Transposition(4);
-        fx->add_harmonic_transformation(trans);
+        fx->add_transformation(trans);
 
         fx->process(num_samples, input, num_samples, output);
 

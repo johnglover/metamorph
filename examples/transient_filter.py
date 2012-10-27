@@ -20,7 +20,7 @@ print frequency, 'Hz.'
 fx = metamorph.FX()
 
 trans = metamorph.TransientLPF(frequency)
-fx.add_transient_transformation(trans)
+fx.add_transformation(trans)
 
 output = fx.process(audio)
 wav.write(output_path, sampling_rate, np.array(output * 32768, dtype=np.int16))

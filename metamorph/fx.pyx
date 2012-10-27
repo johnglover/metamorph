@@ -65,6 +65,31 @@ cdef class FX:
         def __get__(self): return self.thisptr.apply_envelope()
         def __set__(self, bool b): self.thisptr.apply_envelope(b)
 
+    def add_transformation(self, t):
+        if isinstance(t, HarmonicTransformation):
+            self.thisptr.add_transformation(
+                (<HarmonicTransformation>t).thisptr
+            )
+        elif isinstance(t, ResidualTransformation):
+            self.thisptr.add_transformation(
+                (<ResidualTransformation>t).thisptr
+            )
+        elif isinstance(t, TransientTransformation):
+            self.thisptr.add_transformation(
+                (<TransientTransformation>t).thisptr
+            )
+        else:
+            raise Exception('InvalidTransformation')
+
+    def clear_harmonic_transformations(self):
+        self.thisptr.clear_harmonic_transformations()
+
+    def clear_residual_transformations(self):
+        self.thisptr.clear_residual_transformations()
+
+    def clear_transient_transformations(self):
+        self.thisptr.clear_transient_transformations()
+
     def new_transient(self, np.ndarray[dtype_t, ndim=1] transient):
         self.thisptr.new_transient(len(transient), <double*> transient.data)
 
@@ -76,30 +101,6 @@ cdef class FX:
 
     def clear_envelope(self):
         self.thisptr.clear_envelope()
-
-    def add_harmonic_transformation(self, HarmonicTransformation t not None):
-        self.thisptr.add_harmonic_transformation(t.thisptr)
-
-    def clear_harmonic_transformations(self):
-        self.thisptr.clear_harmonic_transformations()
-
-    def add_residual_transformation(self, ResidualTransformation t not None):
-        self.thisptr.add_residual_transformation(t.thisptr)
-
-    def clear_residual_transformations(self):
-        self.thisptr.clear_residual_transformations()
-
-    def add_transient_transformation(self, TransientTransformation t not None):
-        self.thisptr.add_transient_transformation(t.thisptr)
-
-    def clear_transient_transformations(self):
-        self.thisptr.clear_transient_transformations()
-
-    def add_harmonic_transformation(self, HarmonicTransformation h not None):
-        self.thisptr.add_harmonic_transformation(h.thisptr)
-
-    def clear_harmonic_transformations(self):
-        self.thisptr.clear_harmonic_transformations()
 
     def process_frame(self, np.ndarray[dtype_t, ndim=1] audio):
         cdef np.ndarray[dtype_t, ndim=1] output = np.zeros(len(audio))

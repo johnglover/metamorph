@@ -31,7 +31,7 @@ class EnvInterp : public SpecEnvTransformation {
             fx->apply_envelope(_env);
         }
 
-        void process_frame(simpl::Frame* frame, std::vector<double>& new_env) {
+        void process_frame(simpl::Frame* frame, std::vector<double>& env) {
             // gradually change envelope interpolation until the applied
             // envelope is the linear ramp
             _interp += _interp_step;
@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
     fx.preserve_envelope(true);
 
     EnvInterp env_interp = EnvInterp(&fx, num_frames);
-    fx.add_specenv_transformation(&env_interp);
+    fx.add_transformation(&env_interp);
 
     std::vector<double> input(num_samples);
     std::vector<double> output(num_samples);

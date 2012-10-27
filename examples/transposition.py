@@ -20,7 +20,7 @@ fx = metamorph.FX()
 fx.preserve_transients = False
 
 trans = metamorph.Transposition(transposition)
-fx.add_harmonic_transformation(trans)
+fx.add_transformation(trans)
 
 output = fx.process(audio)
 wav.write(output_path, sampling_rate, np.array(output * 32768, dtype=np.int16))

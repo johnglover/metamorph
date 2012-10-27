@@ -96,14 +96,18 @@ class FX {
         int max_partials();
         virtual void max_partials(int new_max_partials);
 
+        void add_transformation(HarmonicTransformation* trans);
+        void add_transformation(SpecEnvTransformation* trans);
+        void add_transformation(ResidualTransformation* trans);
+        void add_transformation(TransientTransformation* trans);
+
+        void clear_harmonic_transformations();
+        void clear_specenv_transformations();
+        void clear_residual_transformations();
+        void clear_transient_transformations();
+
         // -------------------------------------------------------------------
         // Harmonic transformations
-
-        void add_harmonic_transformation(HarmonicTransformation* trans);
-        void clear_harmonic_transformations();
-        void add_specenv_transformation(SpecEnvTransformation* trans);
-        void clear_specenv_transformations();
-
         sample harmonic_scale();
         virtual void harmonic_scale(sample new_harmonic_scale);
 
@@ -120,19 +124,11 @@ class FX {
 
         // -------------------------------------------------------------------
         // Residual transformations
-
-        void add_residual_transformation(ResidualTransformation* trans);
-        void clear_residual_transformations();
-
         sample residual_scale();
         virtual void residual_scale(sample new_residual_scale);
 
         // -------------------------------------------------------------------
         // Transient transformations
-
-        void add_transient_transformation(TransientTransformation* trans);
-        void clear_transient_transformations();
-
         sample transient_scale();
         virtual void transient_scale(sample new_transient_scale);
 

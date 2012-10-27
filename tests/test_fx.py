@@ -54,7 +54,7 @@ class TestHarmonicDistortion(object):
         fx.transient_scale = 0
 
         hdist = metamorph.HarmonicDistortion(0, 440)
-        fx.add_harmonic_transformation(hdist)
+        fx.add_transformation(hdist)
 
         output = fx.process(self.audio)
         assert len(output) == len(self.audio)

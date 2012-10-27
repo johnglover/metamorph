@@ -18,8 +18,13 @@ cdef extern from "../src/fx.h" namespace "metamorph":
         int max_partials()
         void max_partials(int new_max_partials)
 
-        void add_harmonic_transformation(c_HarmonicTransformation* h)
+        void add_transformation(c_HarmonicTransformation* h)
+        void add_transformation(c_ResidualTransformation* h)
+        void add_transformation(c_TransientTransformation* h)
         void clear_harmonic_transformations()
+        void clear_residual_transformations()
+        void clear_transient_transformations()
+
         double harmonic_scale()
         void harmonic_scale(double new_harmonic_scale)
         bool preserve_envelope()
@@ -32,13 +37,9 @@ cdef extern from "../src/fx.h" namespace "metamorph":
         void apply_envelope(bool new_apply_env)
         void clear_envelope()
 
-        void add_residual_transformation(c_ResidualTransformation* h)
-        void clear_residual_transformations()
         double residual_scale()
         void residual_scale(double new_residual_scale)
 
-        void add_transient_transformation(c_TransientTransformation* h)
-        void clear_transient_transformations()
         double transient_scale()
         bool preserve_transients()
         void preserve_transients(bool preserve)
