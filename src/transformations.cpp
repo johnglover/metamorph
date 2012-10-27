@@ -23,7 +23,7 @@ void Transposition::transposition(sample new_transposition) {
 }
 
 sample Transposition::semitones_to_freq(sample semitones) {
-    return powf(TWELFTH_ROOT_2, semitones);
+    return pow(TWELFTH_ROOT_2, semitones);
 }
 
 void Transposition::process_frame(simpl::Frame* frame) {
