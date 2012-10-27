@@ -110,6 +110,7 @@ class FX {
         void env_interp(sample new_env_interp);
         int env_size();
         void apply_envelope(int env_size, sample* env);
+        void apply_envelope(std::vector<sample>& env);
         bool apply_envelope();
         void apply_envelope(bool new_apply_env);
         void clear_envelope();

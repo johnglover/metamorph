@@ -299,16 +299,7 @@ void FX::apply_envelope(simpl::Frame* frame) {
         for(int i = 0; i < _env.size(); i++) {
             amp1 = _env[i];
             amp2 = _new_env[i];
-
-            if(amp1 <= 0) {
-              amp1 = amp2;
-            }
-
-            if(amp2 <= 0) {
-              amp2 = amp1;
-            }
-
-            _env[i] = amp1 + (_env_interp * (amp2 - amp1));
+            _env[i] = ((1.0 - _env_interp) * amp1) + (_env_interp * amp2);
         }
     }
 
@@ -369,6 +360,19 @@ void FX::apply_envelope(int env_size, sample* env) {
 
     _apply_env = true;
     _new_env.assign(env, env + env_size);
+}
+
+void FX::apply_envelope(std::vector<sample>& env) {
+    if(env.size() != _env_size) {
+        printf("Error: could not apply envelope as the new envelope "
+               "size (%d) does not match the current envelope "
+               "size (%d).\n", (int)env.size(), _env_size);
+        return;
+    }
+
+    _apply_env = true;
+
+    _new_env.assign(env.begin(), env.end());
 }
 
 bool FX::apply_envelope() {
