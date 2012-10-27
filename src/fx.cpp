@@ -138,6 +138,39 @@ void FX::reset_envelope_data() {
     _spec_env = new SpectralEnvelope(_env_order, _env_size);
 }
 
+void FX::setup_frame() {
+    _frame->clear();
+    _residual_frame->clear();
+
+    if(_hop_size == _frame_size) {
+        _frame->audio(&(_input[0]));
+        _residual_frame->audio(&(_input[0]));
+    }
+    else {
+        memcpy(_frame->audio(),
+               _prev_frame->audio() + _hop_size,
+               sizeof(sample) * (_frame_size - _hop_size));
+        memcpy(_frame->audio() + (_frame_size - _hop_size),
+               &(_input[0]),
+               sizeof(sample) * _hop_size);
+
+        memcpy(_residual_frame->audio(),
+               _prev_frame->audio() + _hop_size,
+               sizeof(sample) * (_frame_size - _hop_size));
+        memcpy(_residual_frame->audio() + (_frame_size - _hop_size),
+               &(_input[0]),
+               sizeof(sample) * _hop_size);
+    }
+}
+
+void FX::cleanup_frame() {
+    // save samples if frames are larger than hops
+    if(_frame_size > _hop_size) {
+        memcpy(_prev_frame->audio(), _frame->audio(),
+               sizeof(sample) * _frame_size);
+    }
+}
+
 int FX::frame_size() {
     return _frame_size;
 }
@@ -295,11 +328,9 @@ void FX::apply_envelope(simpl::Frame* frame) {
     }
 
     if(_env_interp > 0) {
-        sample amp1, amp2;
         for(int i = 0; i < _env.size(); i++) {
-            amp1 = _env[i];
-            amp2 = _new_env[i];
-            _env[i] = ((1.0 - _env_interp) * amp1) + (_env_interp * amp2);
+            _env[i] = ((1.0 - _env_interp) * _env[i]) +
+                      (_env_interp * _new_env[i]);
         }
     }
 
@@ -462,31 +493,13 @@ void FX::clear_new_transient() {
 // ---------------------------------------------------------------------------
 void FX::process_frame(int input_size, sample* input,
                        int output_size, sample* output) {
+    // setup for current frame
+    _input.assign(input, input + _hop_size);
+    setup_frame();
+
+    // calculate current temporal region
     _previous_segment = _current_segment;
     _current_segment = _ns.segment(input_size, input);
-    _frame->clear();
-    _residual_frame->clear();
-
-    // get audio input, appending to previous samples if necessary
-    for(int i = 0; i < _hop_size; i++) {
-        _input[i] = input[i];
-    }
-
-    if(_hop_size == _frame_size) {
-        _frame->audio(input);
-        _residual_frame->audio(input);
-    }
-    else {
-        memcpy(_frame->audio(), _prev_frame->audio() + _hop_size,
-               sizeof(sample) * (_frame_size - _hop_size));
-        memcpy(_frame->audio() + (_frame_size - _hop_size), input,
-               sizeof(sample) * _hop_size);
-
-        memcpy(_residual_frame->audio(), _prev_frame->audio() + _hop_size,
-               sizeof(sample) * (_frame_size - _hop_size));
-        memcpy(_residual_frame->audio() + (_frame_size - _hop_size), input,
-               sizeof(sample) * _hop_size);
-    }
 
     // if at onset, reset any processes that rely on the current note segment
     if(_current_segment == ONSET) {
@@ -591,11 +604,7 @@ void FX::process_frame(int input_size, sample* input,
         }
     }
 
-    // save samples if frames are larger than hops
-    if(_frame_size > _hop_size) {
-        memcpy(_prev_frame->audio(), _frame->audio(),
-               sizeof(sample) * _frame_size);
-    }
+    cleanup_frame();
 }
 
 void FX::process(long input_size, sample* input,

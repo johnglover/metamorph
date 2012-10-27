@@ -58,6 +58,9 @@ class FX {
         simpl::Synthesis* _synth;
         simpl::Residual* _residual;
 
+        void setup_frame();
+        void cleanup_frame();
+
         bool _create_env;
         bool _apply_env;
         sample _env_interp;
