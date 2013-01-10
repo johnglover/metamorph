@@ -24,7 +24,7 @@ install(FILES ${include_files} DESTINATION include/metamorph)
 # ----------------------------------------------------------------------------
 if(BUILD_TESTS)
     set(test_src ${source_files} tests/test_fx.cpp)
-    LIST(APPEND libs cppunit sndfile)
+    list(APPEND libs cppunit sndfile)
     add_executable(test_fx ${test_src})
     target_link_libraries(test_fx ${libs})
 else()
