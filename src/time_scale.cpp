@@ -35,8 +35,9 @@ void TimeScale::process(long input_size, sample* input,
         _current_segment = _ns.segment(_hop_size, &input[i]);
         _segments[i / _hop_size] = _current_segment;
 
-        if(_current_segment == NONE || _current_segment == ONSET ||
-           _current_segment == ATTACK) {
+        if(_current_segment == notesegmentation::NONE ||
+           _current_segment == notesegmentation::ONSET ||
+           _current_segment == notesegmentation::ATTACK) {
             transient_length += _hop_size;
         }
     }
@@ -64,16 +65,18 @@ void TimeScale::process(long input_size, sample* input,
         _synth->synth_frame(frames[f]);
         _residual->synth_frame(_residual_frame);
 
-        if(_segments[f] == NONE || _segments[f] == ONSET ||
-           _segments[f] == ATTACK) {
+        if(_segments[f] == notesegmentation::NONE ||
+           _segments[f] == notesegmentation::ONSET ||
+           _segments[f] == notesegmentation::ATTACK) {
             for(int i = 0; i < _hop_size; i++) {
                 output[n] = frames[f]->audio()[i] * _transient_scale;
                 n++;
             }
             current_frame += 1;
         }
-        else if(_segments[f] == SUSTAIN &&
-                (_segments[f - 1] == ONSET || _segments[f - 1] == ATTACK)) {
+        else if(_segments[f] == notesegmentation::SUSTAIN &&
+                (_segments[f - 1] == notesegmentation::ONSET ||
+                 _segments[f - 1] == notesegmentation::ATTACK)) {
             for(int i = 0; i < _fade_duration; i++) {
                 output[n] = frames[f]->audio()[i] * _fade_out[i] *
                             _transient_scale;

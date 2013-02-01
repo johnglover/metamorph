@@ -2,6 +2,7 @@
 #define METAMORPH_TIME_SCALE_H
 
 #include <vector>
+#include "notesegmentation/segmentation.h"
 #include "fx.h"
 
 using namespace std;

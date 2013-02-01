@@ -6,8 +6,8 @@ FX::FX() {
     _frame_size = 2048;
     _hop_size = 512;
     _max_partials = 256;
-    _current_segment = NONE;
-    _previous_segment = NONE;
+    _current_segment = notesegmentation::NONE;
+    _previous_segment = notesegmentation::NONE;
 
     _harmonic_scale = 1.f;
     _residual_scale = 1.f;
@@ -502,7 +502,7 @@ void FX::process_frame(int input_size, sample* input,
     _current_segment = _ns.segment(input_size, input);
 
     // if at onset, reset any processes that rely on the current note segment
-    if(_current_segment == ONSET) {
+    if(_current_segment == notesegmentation::ONSET) {
         reset();
     }
 
@@ -513,7 +513,8 @@ void FX::process_frame(int input_size, sample* input,
     // don't use synthesis output for transient region if
     // _preserve_transients is set to true
     if(_preserve_transients && (_transient_scale > 0) &&
-       (_current_segment == ONSET || _current_segment == ATTACK)) {
+       (_current_segment == notesegmentation::ONSET ||
+        _current_segment == notesegmentation::ATTACK)) {
         // perform all transient transformations
         for(int i = 0; i < _transient_trans.size(); i++) {
             _transient_trans[i]->process_frame(_input);
@@ -561,8 +562,11 @@ void FX::process_frame(int input_size, sample* input,
             _residual->synth_frame(_residual_frame);
         }
 
-        if(_preserve_transients && _current_segment == SUSTAIN &&
-           (_previous_segment == ONSET || _previous_segment == ATTACK)) {
+        if(_preserve_transients &&
+           _current_segment == notesegmentation::SUSTAIN &&
+           (_previous_segment == notesegmentation::ONSET ||
+            _previous_segment == notesegmentation::ATTACK)) {
+
             // perform all transient transformations
             for(int i = 0; i < _transient_trans.size(); i++) {
                 _transient_trans[i]->process_frame(_input);

@@ -48,7 +48,7 @@ class FX {
         sample* _fade_in;
         sample* _fade_out;
 
-        RTSegmentation _ns;
+        notesegmentation::RTSegmentation _ns;
 
         simpl::Frame* _frame;
         simpl::Frame* _residual_frame;
