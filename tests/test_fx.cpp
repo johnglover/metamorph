@@ -1,156 +1,81 @@
-#include <iostream>
-#include <cppunit/ui/text/TextTestRunner.h>
-#include <cppunit/TestResult.h>
-#include <cppunit/TestResultCollector.h>
-#include <cppunit/extensions/HelperMacros.h>
-#include <cppunit/BriefTestProgressListener.h>
-#include <cppunit/extensions/TestFactoryRegistry.h>
-#include <sndfile.hh>
+#include "test_fx.h"
 
-#include "../src/metamorph.h"
+using namespace metamorph;
 
-namespace metamorph
-{
+void TestFX::setUp() {
+    _sf = SndfileHandle(TEST_AUDIO_FILE);
 
-// ---------------------------------------------------------------------------
-//	TestFX
-// ---------------------------------------------------------------------------
-class TestFX : public CPPUNIT_NS::TestCase {
-    CPPUNIT_TEST_SUITE(TestFX);
-    CPPUNIT_TEST(test_basic);
-    CPPUNIT_TEST(test_transposition_with_env);
-    CPPUNIT_TEST_SUITE_END();
-
-protected:
-    static const double PRECISION = 0.001;
-    SndfileHandle sf;
-    int num_samples;
-    FX* fx;
-
-public:
-    void setUp() {
-        fx = NULL;
-        sf = SndfileHandle("../tests/audio/flute.wav");
-        num_samples = 4096;
+    if(_sf.error() > 0) {
+        throw Exception(std::string("Could not open audio file: ") +
+                        std::string(TEST_AUDIO_FILE));
     }
+}
 
-    void tearDown() {
-        if(fx) delete fx;
-    }
 
-    void test_basic() {
-        sample* input = new sample[num_samples];
-        memset(input, 0, sizeof(sample) * num_samples);
-        sf.read(input, num_samples);
+void TestFX::test_basic() {
+    std::vector<sample> audio(_sf.frames(), 0.0);
+    _sf.read(&audio[0], (int)_sf.frames());
+    std::vector<sample> audio_out(_sf.frames(), 0.0);
 
-        sample* output = new sample[num_samples];
-        memset(output, 0, sizeof(sample) * num_samples);
+    _fx.reset();
+    _fx.process(audio.size(), &audio[0], audio_out.size(), &audio_out[0]);
 
-        if(fx) delete fx;
-        fx = new FX();
-
-        fx->process(num_samples, input, num_samples, output);
-
-        for(int i = 0; i < num_samples - fx->hop_size(); i += fx->hop_size()) {
-            double energy = 0.f;
-            for(int j = 0; j < fx->hop_size(); j++) {
-                energy += output[i + j] * output[i + j];
-            }
-            CPPUNIT_ASSERT(energy > 0.f);
+    for(int i = 0; i < audio_out.size() - _fx.hop_size(); i += _fx.hop_size()) {
+        double energy = 0.f;
+        for(int j = 0; j < _fx.hop_size(); j++) {
+            energy += audio_out[i + j] * audio_out[i + j];
         }
-
-        delete [] input;
-        delete [] output;
+        CPPUNIT_ASSERT(energy > 0.f);
     }
+}
 
-    void test_transposition_with_env() {
-        sample* input = new sample[num_samples];
-        memset(input, 0, sizeof(sample) * num_samples);
-        sf.read(input, num_samples);
+void TestFX::test_transposition_with_env() {
+    std::vector<sample> audio(_sf.frames(), 0.0);
+    _sf.read(&audio[0], (int)_sf.frames());
+    std::vector<sample> audio_out(_sf.frames(), 0.0);
 
-        sample* output = new sample[num_samples];
-        memset(output, 0, sizeof(sample) * num_samples);
+    _fx.reset();
+    _fx.preserve_envelope(true);
 
-        if(fx) delete fx;
+    Transposition trans(4);
+    _fx.add_transformation(&trans);
 
-        fx = new FX();
-        fx->preserve_envelope(true);
+    _fx.process(audio.size(), &audio[0], audio_out.size(), &audio_out[0]);
 
-        Transposition* trans = new Transposition(4);
-        fx->add_transformation(trans);
-
-        fx->process(num_samples, input, num_samples, output);
-
-        for(int i = 0; i < num_samples - fx->hop_size(); i += fx->hop_size()) {
-            double energy = 0.f;
-            for(int j = 0; j < fx->hop_size(); j++) {
-                energy += output[i + j] * output[i + j];
-            }
-            CPPUNIT_ASSERT(energy > 0.f);
+    for(int i = 0; i < audio_out.size() - _fx.hop_size(); i += _fx.hop_size()) {
+        double energy = 0.f;
+        for(int j = 0; j < _fx.hop_size(); j++) {
+            energy += audio_out[i + j] * audio_out[i + j];
         }
-
-        delete [] input;
-        delete [] output;
-    }
-};
-
-
-// ---------------------------------------------------------------------------
-//	TestTimeScale
-// ---------------------------------------------------------------------------
-class TestTimeScale : public CPPUNIT_NS::TestCase {
-    CPPUNIT_TEST_SUITE(TestTimeScale);
-    CPPUNIT_TEST(test_basic);
-    CPPUNIT_TEST_SUITE_END();
-
-protected:
-    static const double PRECISION = 0.001;
-    SndfileHandle sf;
-    int num_samples;
-    TimeScale* ts;
-
-public:
-    void setUp() {
-        ts = new TimeScale();
-        sf = SndfileHandle("../tests/audio/flute.wav");
-        num_samples = 4096;
+        CPPUNIT_ASSERT(energy > 0.f);
     }
 
-    void tearDown() {
-        delete ts;
+    _fx.clear_harmonic_transformations();
+}
+
+
+void TestTimeScale::setUp() {
+    _sf = SndfileHandle(TEST_AUDIO_FILE);
+
+    if(_sf.error() > 0) {
+        throw Exception(std::string("Could not open audio file: ") +
+                        std::string(TEST_AUDIO_FILE));
     }
+}
 
-    void test_basic() {
-        sample* input = new sample[num_samples];
-        memset(input, 0, sizeof(sample) * num_samples);
-        sf.read(input, num_samples);
+void TestTimeScale::test_basic() {
+    std::vector<sample> audio(_sf.frames(), 0.0);
+    _sf.read(&audio[0], (int)_sf.frames());
+    std::vector<sample> audio_out(_sf.frames(), 0.0);
 
-        sample* output = new sample[num_samples];
-        memset(output, 0, sizeof(sample) * num_samples);
+    _ts.scale_factor(1.0);
+    _ts.process(audio.size(), &audio[0], audio_out.size(), &audio_out[0]);
 
-        ts->scale_factor(1.0);
-        ts->process(num_samples, input, num_samples, output);
-
-        for(int i = 0; i < num_samples - ts->hop_size(); i += ts->hop_size()) {
-            double energy = 0.f;
-            for(int j = 0; j < ts->hop_size(); j++) {
-                energy += output[i + j] * output[i + j];
-            }
-            CPPUNIT_ASSERT(energy > 0.f);
+    for(int i = 0; i < audio_out.size() - _ts.hop_size(); i += _ts.hop_size()) {
+        double energy = 0.f;
+        for(int j = 0; j < _ts.hop_size(); j++) {
+            energy += audio_out[i + j] * audio_out[i + j];
         }
-
-        delete [] input;
-        delete [] output;
+        CPPUNIT_ASSERT(energy > 0.f);
     }
-};
-
-} // end of namespace metamorph
-
-CPPUNIT_TEST_SUITE_REGISTRATION(metamorph::TestFX);
-CPPUNIT_TEST_SUITE_REGISTRATION(metamorph::TestTimeScale);
-
-int main(int arg, char **argv) {
-    CppUnit::TextTestRunner runner;
-    runner.addTest(CppUnit::TestFactoryRegistry::getRegistry().makeTest());
-    return runner.run("", false);
 }
