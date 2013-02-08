@@ -9,11 +9,11 @@ struct Mm {
     FX* fx;
     Transposition* transpose;
     HarmonicDistortion* hdist;
-    Mm(CSOUND *csound, MM* params);
+    Mm(CSOUND *csound, MM *params);
     ~Mm(void);
 };
 
-Mm::Mm(CSOUND *csound, MM* params) {
+Mm::Mm(CSOUND *csound, MM *params) {
     fx = new FX();
     fx->hop_size(csound->ksmps);
 
@@ -29,9 +29,9 @@ Mm::~Mm() {
     delete transpose;
 }
 
-extern "C" int mm_cleanup(CSOUND *, void * p);
+extern "C" int mm_cleanup(CSOUND *, void *p);
 
-extern "C" int mm_setup(CSOUND *csound, MM* p) {
+extern "C" int mm_setup(CSOUND *csound, MM *p) {
     p->data = new Mm(csound, p);
 
     csound->RegisterDeinitCallback(
@@ -40,12 +40,12 @@ extern "C" int mm_setup(CSOUND *csound, MM* p) {
     return OK;
 }
 
-extern "C" int mm(CSOUND *csound, MM* p) {
+extern "C" int mm(CSOUND *csound, MM *p) {
     int nsmps = csound->ksmps;
     MYFLT *output = p->output;
     MYFLT *input = p->input;
 
-    memset(output, 0, sizeof(MYFLT) * nsmps);
+    memset(output, 0, sizeof(MYFLT) *nsmps);
 
     p->data->fx->harmonic_scale((*p->harmonic_scale));
     p->data->fx->residual_scale((*p->residual_scale));
@@ -63,7 +63,7 @@ extern "C" int mm(CSOUND *csound, MM* p) {
     return OK;
 }
 
-extern "C" int mm_cleanup(CSOUND *csound, void * p) {
+extern "C" int mm_cleanup(CSOUND *csound, void *p) {
     MM* pp = (MM *)p;
     delete pp->data;
     pp->data = 0;
