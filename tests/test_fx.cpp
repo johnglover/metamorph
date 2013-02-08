@@ -2,6 +2,10 @@
 
 using namespace metamorph;
 
+
+// ---------------------------------------------------------------------------
+//	TestFX
+// ---------------------------------------------------------------------------
 void TestFX::setUp() {
     _sf = SndfileHandle(TEST_AUDIO_FILE);
 
@@ -10,7 +14,6 @@ void TestFX::setUp() {
                         std::string(TEST_AUDIO_FILE));
     }
 }
-
 
 void TestFX::test_basic() {
     std::vector<sample> audio(_sf.frames(), 0.0);
@@ -53,7 +56,47 @@ void TestFX::test_transposition_with_env() {
     _fx.clear_harmonic_transformations();
 }
 
+void TestFX::test_change_hop_frame_size() {
+    std::vector<sample> audio(_sf.frames(), 0.0);
+    _sf.read(&audio[0], (int)_sf.frames());
+    std::vector<sample> audio_out(_sf.frames(), 0.0);
 
+    int frame_size = 2048;
+    int hop_size = 512;
+
+    _fx.reset();
+    _fx.frame_size(frame_size);
+    _fx.hop_size(hop_size);
+    _fx.process(audio.size(), &audio[0], audio_out.size(), &audio_out[0]);
+
+    for(int i = 0; i < audio_out.size() - hop_size; i += hop_size) {
+        double energy = 0.f;
+        for(int j = 0; j < hop_size; j++) {
+            energy += audio_out[i + j] * audio_out[i + j];
+        }
+        CPPUNIT_ASSERT(energy > 0.f);
+    }
+
+    frame_size = 512;
+    hop_size = 256;
+
+    _fx.reset();
+    _fx.frame_size(frame_size);
+    _fx.hop_size(hop_size);
+    _fx.process(audio.size(), &audio[0], audio_out.size(), &audio_out[0]);
+
+    for(int i = 0; i < audio_out.size() - hop_size; i += hop_size) {
+        double energy = 0.f;
+        for(int j = 0; j < hop_size; j++) {
+            energy += audio_out[i + j] * audio_out[i + j];
+        }
+        CPPUNIT_ASSERT(energy > 0.f);
+    }
+}
+
+// ---------------------------------------------------------------------------
+//	TestTimeScale
+// ---------------------------------------------------------------------------
 void TestTimeScale::setUp() {
     _sf = SndfileHandle(TEST_AUDIO_FILE);
 

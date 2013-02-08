@@ -3,6 +3,7 @@
 
 #include "notesegmentation/segmentation.h"
 #include "simpl/simpl.h"
+#include "exceptions.h"
 #include "spec_env.h"
 #include "transformations.h"
 
@@ -58,7 +59,7 @@ class FX {
         simpl::Synthesis* _synth;
         simpl::Residual* _residual;
 
-        void setup_frame();
+        void setup_frame(int input_size, int output_size);
         void cleanup_frame();
 
         bool _create_env;

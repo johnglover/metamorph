@@ -138,7 +138,18 @@ void FX::reset_envelope_data() {
     _spec_env = new SpectralEnvelope(_env_order, _env_size);
 }
 
-void FX::setup_frame() {
+void FX::setup_frame(int input_size, int output_size) {
+    if(input_size < _hop_size ||
+       output_size < _hop_size) {
+        throw Exception(std::string("Audio frame size less than ") +
+                        std::string("FX hop size"));
+    }
+    else if((input_size % _hop_size != 0) ||
+            (output_size % _hop_size != 0)) {
+        throw Exception(std::string("Audio frame size not a multiple ") +
+                        std::string("of FX hop size"));
+    }
+
     _frame->clear();
     _residual_frame->clear();
 
@@ -164,7 +175,7 @@ void FX::setup_frame() {
 }
 
 void FX::cleanup_frame() {
-    // save samples if frames are larger than hops
+    // save samples if frames are larger than hop size
     if(_frame_size > _hop_size) {
         memcpy(_prev_frame->audio(), _frame->audio(),
                sizeof(sample) * _frame_size);
@@ -215,6 +226,7 @@ void FX::hop_size(int new_hop_size) {
     _synth->hop_size(_hop_size);
     _residual->hop_size(_hop_size);
     _input.resize(_hop_size);
+    _ns.frame_size(_hop_size);
     reset_fade_windows();
 }
 
@@ -495,7 +507,7 @@ void FX::process_frame(int input_size, sample* input,
                        int output_size, sample* output) {
     // setup for current frame
     _input.assign(input, input + _hop_size);
-    setup_frame();
+    setup_frame(input_size, output_size);
 
     // calculate current temporal region
     _previous_segment = _current_segment;

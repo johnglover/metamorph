@@ -1,7 +1,7 @@
 #include <cppunit/extensions/HelperMacros.h>
 
-#include "test_common.h"
 #include "metamorph.h"
+#include "test_common.h"
 
 namespace metamorph
 {
@@ -14,6 +14,7 @@ class TestFX : public CPPUNIT_NS::TestCase {
     CPPUNIT_TEST_SUITE(TestFX);
     CPPUNIT_TEST(test_basic);
     CPPUNIT_TEST(test_transposition_with_env);
+    CPPUNIT_TEST(test_change_hop_frame_size);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -25,6 +26,7 @@ public:
 
     void test_basic();
     void test_transposition_with_env();
+    void test_change_hop_frame_size();
 };
 
 
