@@ -27,7 +27,8 @@ metamorph = Extension(
              'src/fx.cpp',
              'src/transformations.cpp',
              'src/time_scale.cpp',
-             'src/spec_env.cpp'],
+             'src/spec_env.cpp',
+             'src/exceptions.cpp'],
     include_dirs=['src'] + include_dirs,
     libraries=libs,
     language='c++'
