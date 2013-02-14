@@ -6,6 +6,7 @@ using namespace metamorph;
 // Main Metamorph Opcode
 // ----------------------------------------------------------------------------
 struct Mm {
+    int hops_per_frame;
     FX* fx;
     Transposition* transpose;
     HarmonicDistortion* hdist;
@@ -14,8 +15,11 @@ struct Mm {
 };
 
 Mm::Mm(CSOUND *csound, MM *params) {
+    hops_per_frame = 4;
+
     fx = new FX();
     fx->hop_size(csound->ksmps);
+    fx->frame_size(csound->ksmps * hops_per_frame);
 
     transpose = new Transposition();
     fx->add_transformation(transpose);
@@ -59,7 +63,7 @@ extern "C" int mm(CSOUND *csound, MM *p) {
     p->data->hdist->harmonic_distortion(*p->harmonic_distortion);
     p->data->hdist->fundamental_frequency(*p->fundamental_frequency);
 
-    p->data->fx->process_frame(nsmps, input, nsmps, output);
+    p->data->fx->process_frame(nsmps, (double*)input, nsmps, (double*)output);
     return OK;
 }
 
