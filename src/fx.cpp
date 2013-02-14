@@ -198,11 +198,13 @@ void FX::frame_size(int new_frame_size) {
 
     if(_frame) delete _frame;
     _frame = new simpl::Frame(_frame_size, true);
+    _frame->synth_size(_hop_size);
     _frame->max_peaks(_max_partials);
     _frame->max_partials(_max_partials);
 
     if(_residual_frame) delete _residual_frame;
     _residual_frame = new simpl::Frame(_frame_size, true);
+    _residual_frame->synth_size(_hop_size);
 
     if(_prev_frame) delete _prev_frame;
     _prev_frame = new simpl::Frame(_frame_size, true);
@@ -224,7 +226,9 @@ void FX::hop_size(int new_hop_size) {
     _hop_size = new_hop_size;
     _pd->hop_size(_hop_size);
     _synth->hop_size(_hop_size);
+    _frame->synth_size(_hop_size);
     _residual->hop_size(_hop_size);
+    _residual_frame->synth_size(_hop_size);
     _input.resize(_hop_size);
     _ns.frame_size(_hop_size);
     reset_fade_windows();
@@ -273,6 +277,13 @@ void FX::add_transformation(TransientTransformation* trans) {
 
 void FX::clear_transient_transformations() {
     _transient_trans.clear();
+}
+
+void FX::clear_transformations() {
+    clear_harmonic_transformations();
+    clear_specenv_transformations();
+    clear_residual_transformations();
+    clear_transient_transformations();
 }
 
 // ---------------------------------------------------------------------------

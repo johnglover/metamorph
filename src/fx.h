@@ -106,6 +106,7 @@ class FX {
         void clear_specenv_transformations();
         void clear_residual_transformations();
         void clear_transient_transformations();
+        void clear_transformations();
 
         // -------------------------------------------------------------------
         // Harmonic transformations
@@ -143,7 +144,6 @@ class FX {
 
         // -------------------------------------------------------------------
         // Processing
-
         virtual void process_frame(int input_size, sample* input,
                                    int output_size, sample* output);
         virtual void process(long input_size, sample* input,
