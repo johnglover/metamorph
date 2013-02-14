@@ -6,7 +6,6 @@
 
 <CsInstruments>
 sr = 44100
-kr = 86.1328125
 ksmps = 512
 nchnls = 1
 0dbfs = 1
@@ -20,7 +19,6 @@ endin
 
 <CsScore>
 i1 0 60
-e
 </CsScore>
 
 </CsoundSynthesizer>
