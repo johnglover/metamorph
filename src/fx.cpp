@@ -99,8 +99,12 @@ void FX::reset() {
 }
 
 void FX::reset_fade_windows() {
-    if(_fade_in) delete [] _fade_in;
-    if(_fade_out) delete [] _fade_out;
+    if(_fade_in) {
+        delete [] _fade_in;
+    }
+    if(_fade_out) {
+        delete [] _fade_out;
+    }
 
     _fade_in = new sample[_fade_duration];
     _fade_out = new sample[_fade_duration];
@@ -231,6 +235,8 @@ void FX::hop_size(int new_hop_size) {
     _residual_frame->synth_size(_hop_size);
     _input.resize(_hop_size);
     _ns.frame_size(_hop_size);
+    _ns.hop_size(_hop_size);
+    _fade_duration = _hop_size;
     reset_fade_windows();
 }
 
