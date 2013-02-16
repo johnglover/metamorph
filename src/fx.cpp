@@ -5,7 +5,7 @@ using namespace metamorph;
 FX::FX() {
     _frame_size = 2048;
     _hop_size = 512;
-    _max_partials = 256;
+    _max_partials = _hop_size / 2;
     _current_segment = notesegmentation::NONE;
     _previous_segment = notesegmentation::NONE;
 
@@ -25,6 +25,8 @@ FX::FX() {
     _frame->max_peaks(_max_partials);
     _frame->max_partials(_max_partials);
     _residual_frame = new simpl::Frame(_frame_size, true);
+    _residual_frame->max_peaks(_max_partials);
+    _residual_frame->max_partials(_max_partials);
     _prev_frame = new simpl::Frame(_frame_size, true);
 
     _pd = new simpl::LorisPeakDetection();
@@ -236,8 +238,19 @@ void FX::hop_size(int new_hop_size) {
     _input.resize(_hop_size);
     _ns.frame_size(_hop_size);
     _ns.hop_size(_hop_size);
+
     _fade_duration = _hop_size;
     reset_fade_windows();
+
+    _max_partials = _hop_size / 2;
+    _frame->max_peaks(_max_partials);
+    _frame->max_partials(_max_partials);
+    _residual_frame->max_peaks(_max_partials);
+    _residual_frame->max_partials(_max_partials);
+    _pd->max_peaks(_max_partials);
+    _pt->max_partials(_max_partials);
+    _synth->max_partials(_max_partials);
+    reset_envelope_data();
 }
 
 int FX::max_partials() {
