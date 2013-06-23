@@ -15,7 +15,7 @@ env_path = sys.argv[2]
 output_path = sys.argv[3]
 
 order = 25
-env_size = 128
+env_size = 256
 frame_size = 2048
 
 audio, sampling_rate = metamorph.read_wav(input_path)
@@ -44,11 +44,11 @@ for i in range(len(freqs)):
     mags[i] = frames[0].peaks[i].amplitude
 
 e = metamorph.SpectralEnvelope(order, env_size)
-env = e.env(freqs, mags)
+env = e.envelope(freqs, mags)
 
 # apply the spectral envelope to the partials in the first wav file
 fx = metamorph.FX()
-fx.apply_envelope(env)
+fx.new_envelope(env)
 fx.env_interp = 1
 fx.residual_scale = 0
 output = fx.process(audio)
