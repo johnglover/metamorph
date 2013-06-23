@@ -27,7 +27,6 @@ FX::FX() {
     _residual_frame = new simpl::Frame(_frame_size, true);
     _residual_frame->max_peaks(_max_partials);
     _residual_frame->max_partials(_max_partials);
-    _prev_frame = new simpl::Frame(_frame_size, true);
 
     _pd = new simpl::LorisPeakDetection();
     _pd->frame_size(_frame_size);
@@ -72,7 +71,6 @@ FX::~FX() {
     if(_fade_out) delete [] _fade_out;
     if(_frame) delete _frame;
     if(_residual_frame) delete _residual_frame;
-    if(_prev_frame) delete _prev_frame;
     if(_pd) delete _pd;
     if(_pt) delete _pt;
     if(_synth) delete _synth;
@@ -156,36 +154,15 @@ void FX::setup_frame(int input_size, int output_size) {
                         std::string("of FX hop size"));
     }
 
-    _frame->clear();
-    _residual_frame->clear();
+    _frame->clear_peaks();
+    _frame->clear_partials();
+    _frame->clear_synth();
+    _residual_frame->clear_peaks();
+    _residual_frame->clear_partials();
+    _residual_frame->clear_synth();
 
-    if(_hop_size == _frame_size) {
-        _frame->audio(&(_input[0]));
-        _residual_frame->audio(&(_input[0]));
-    }
-    else {
-        memcpy(_frame->audio(),
-               _prev_frame->audio() + _hop_size,
-               sizeof(sample) * (_frame_size - _hop_size));
-        memcpy(_frame->audio() + (_frame_size - _hop_size),
-               &(_input[0]),
-               sizeof(sample) * _hop_size);
-
-        memcpy(_residual_frame->audio(),
-               _prev_frame->audio() + _hop_size,
-               sizeof(sample) * (_frame_size - _hop_size));
-        memcpy(_residual_frame->audio() + (_frame_size - _hop_size),
-               &(_input[0]),
-               sizeof(sample) * _hop_size);
-    }
-}
-
-void FX::cleanup_frame() {
-    // save samples if frames are larger than hop size
-    if(_frame_size > _hop_size) {
-        memcpy(_prev_frame->audio(), _frame->audio(),
-               sizeof(sample) * _frame_size);
-    }
+    _frame->audio(&(_input[0]), input_size);
+    _residual_frame->audio(&(_input[0]), input_size);
 }
 
 int FX::frame_size() {
@@ -211,9 +188,6 @@ void FX::frame_size(int new_frame_size) {
     if(_residual_frame) delete _residual_frame;
     _residual_frame = new simpl::Frame(_frame_size, true);
     _residual_frame->synth_size(_hop_size);
-
-    if(_prev_frame) delete _prev_frame;
-    _prev_frame = new simpl::Frame(_frame_size, true);
 
     _pd->frame_size(_frame_size);
     _residual->frame_size(_frame_size);
@@ -353,11 +327,10 @@ void FX::create_envelope(simpl::Frame* frame) {
     _env_frame->clear_peaks();
 
     for(int i = 0; i < frame->num_peaks(); i++) {
-        simpl::Peak* p = new simpl::Peak();
-        p->amplitude = frame->peak(i)->amplitude;
-        p->frequency = frame->peak(i)->frequency;
-        p->phase = frame->peak(i)->phase;
-        _env_frame->add_peak(p);
+        _env_frame->add_peak(frame->peak(i)->amplitude,
+                             frame->peak(i)->frequency,
+                             frame->peak(i)->phase,
+                             0.0);
     }
     _env_pt->update_partials(_env_frame);
 
@@ -649,8 +622,6 @@ void FX::process_frame(int input_size, sample* input,
             }
         }
     }
-
-    cleanup_frame();
 }
 
 void FX::process(long input_size, sample* input,

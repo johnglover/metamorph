@@ -53,14 +53,12 @@ class FX {
 
         simpl::Frame* _frame;
         simpl::Frame* _residual_frame;
-        simpl::Frame* _prev_frame;
         simpl::PeakDetection* _pd;
         simpl::PartialTracking* _pt;
         simpl::Synthesis* _synth;
         simpl::Residual* _residual;
 
         void setup_frame(int input_size, int output_size);
-        void cleanup_frame();
 
         bool _create_env;
         bool _apply_env;
